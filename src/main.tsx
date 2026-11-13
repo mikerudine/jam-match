@@ -5,6 +5,7 @@ import {
   consumeTgAuthResultFromLocation,
   setPendingTelegramWidgetUser,
 } from './auth/telegramWidgetAuth'
+import { capturePendingJamFromStartParam } from './lib/telegramDeepLink'
 import './index.css'
 
 // Strip #tgAuthResult=… before HashRouter mounts — otherwise the * route
@@ -12,6 +13,17 @@ import './index.css'
 const tgRedirectUser = consumeTgAuthResultFromLocation()
 if (tgRedirectUser) {
   setPendingTelegramWidgetUser(tgRedirectUser)
+}
+
+// Direct Mini App links (t.me/<bot>?startapp=jam_<id>) expose start_param
+// via initDataUnsafe or tgWebAppStartParam — capture before routing.
+capturePendingJamFromStartParam()
+
+// Notify Telegram early so initData auto-login still works on startapp launches.
+const webApp = window.Telegram?.WebApp
+if (webApp?.initData) {
+  webApp.ready()
+  webApp.expand?.()
 }
 
 createRoot(document.getElementById('root')!).render(

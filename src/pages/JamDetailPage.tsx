@@ -9,6 +9,22 @@ import {
 import { useAuth } from '@/auth/AuthContext'
 import { Loading } from '@/components/Loading'
 import { useLocale } from '@/i18n/LocaleContext'
+import { telegramAppName, telegramBotUsername } from '@/lib/config'
+import { buildJamTelegramLink } from '@/lib/telegramDeepLink'
+import { copyTextToClipboard, shareJamLink } from '@/lib/telegramShare'
+
+function isNoAccessError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false
+  const e = err as { code?: string; message?: string }
+  if (e.code === 'PGRST116') return true
+  const msg = (e.message ?? '').toLowerCase()
+  return (
+    msg.includes('0 rows') ||
+    msg.includes('not found') ||
+    msg.includes('row-level security') ||
+    msg.includes('permission denied')
+  )
+}
 
 export function JamDetailPage() {
   const { jamId } = useParams<{ jamId: string }>()
@@ -16,6 +32,7 @@ export function JamDetailPage() {
   const { t } = useLocale()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [noAccess, setNoAccess] = useState(false)
   const [detail, setDetail] = useState<Awaited<
     ReturnType<typeof getJamDetail>
   > | null>(null)
@@ -23,6 +40,8 @@ export function JamDetailPage() {
   const [rating, setRating] = useState(4)
   const [showedUp, setShowedUp] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [shareBusy, setShareBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!jamId || !session) return
@@ -35,10 +54,17 @@ export function JamDetailPage() {
         if (!cancelled) {
           setDetail(d)
           setFeedbackDone(done)
+          setNoAccess(false)
         }
       } catch (err) {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : t.common.error)
+        if (!cancelled) {
+          if (isNoAccessError(err)) {
+            setNoAccess(true)
+            setError(null)
+          } else {
+            setError(err instanceof Error ? err.message : t.common.error)
+          }
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -68,6 +94,51 @@ export function JamDetailPage() {
     }
   }
 
+  function jamShareUrl(): string | null {
+    if (!jamId || !telegramBotUsername) return null
+    try {
+      return buildJamTelegramLink(jamId, {
+        botUsername: telegramBotUsername,
+        appName: telegramAppName,
+      })
+    } catch {
+      return null
+    }
+  }
+
+  async function onShare() {
+    const url = jamShareUrl()
+    if (!url) {
+      setError(t.jam.shareUnavailable)
+      return
+    }
+    setShareBusy(true)
+    setError(null)
+    try {
+      await shareJamLink({ url, text: t.jam.shareText })
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      setError(err instanceof Error ? err.message : t.common.error)
+    } finally {
+      setShareBusy(false)
+    }
+  }
+
+  async function onCopyLink() {
+    const url = jamShareUrl()
+    if (!url) {
+      setError(t.jam.shareUnavailable)
+      return
+    }
+    const ok = await copyTextToClipboard(url)
+    if (ok) {
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } else {
+      setError(t.common.error)
+    }
+  }
+
   if (loading) return <Loading />
   if (!detail) {
     return (
@@ -75,7 +146,14 @@ export function JamDetailPage() {
         <Link to="/" className="text-sm text-mute">
           ← {t.common.back}
         </Link>
-        <p className="mt-4 text-danger">{error ?? t.common.error}</p>
+        {noAccess ? (
+          <div className="mt-6 space-y-2">
+            <h1 className="font-display text-xl">{t.jam.noAccessTitle}</h1>
+            <p className="text-sm text-mute">{t.jam.noAccessBody}</p>
+          </div>
+        ) : (
+          <p className="mt-4 text-danger">{error ?? t.common.error}</p>
+        )}
       </div>
     )
   }
@@ -87,6 +165,7 @@ export function JamDetailPage() {
     (jam.status === 'confirmed' || jam.status === 'completed') &&
     !feedbackDone &&
     new Date(jam.window_end).getTime() < Date.now()
+  const canShare = Boolean(telegramBotUsername)
 
   return (
     <div className="space-y-5 pb-6">
@@ -113,6 +192,26 @@ export function JamDetailPage() {
           {jam.base_name ? ` · ${jam.base_name}` : ''}
         </p>
       </div>
+
+      {canShare && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={shareBusy}
+            onClick={onShare}
+            className="rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-60"
+          >
+            {t.jam.shareTelegram}
+          </button>
+          <button
+            type="button"
+            onClick={onCopyLink}
+            className="rounded-xl border border-line px-4 py-2.5 text-sm text-cream"
+          >
+            {copied ? t.jam.linkCopied : t.jam.copyLink}
+          </button>
+        </div>
+      )}
 
       <section className="rounded-2xl border border-line bg-panel/90 p-4">
         <h2 className="text-sm text-mute">{t.home.seats}</h2>

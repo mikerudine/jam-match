@@ -100,6 +100,14 @@ const uk = {
     no: 'Ні',
     submitFeedback: 'Надіслати',
     feedbackDone: 'Дякуємо за відгук',
+    shareTelegram: 'Поділитися в Telegram',
+    copyLink: 'Скопіювати посилання',
+    linkCopied: 'Посилання скопійовано',
+    shareText: 'Запрошення на джем у Jam Match',
+    shareUnavailable: 'Спочатку налаштуйте VITE_TELEGRAM_BOT_USERNAME',
+    noAccessTitle: 'Немає доступу',
+    noAccessBody:
+      'Цей джем недоступний. Попросіть організатора запросити вас або надіслати інше посилання.',
   },
   formats: {
     free_jam: 'Вільний джем',
@@ -236,6 +244,14 @@ const en = {
     no: 'No',
     submitFeedback: 'Submit',
     feedbackDone: 'Thanks for the feedback',
+    shareTelegram: 'Share in Telegram',
+    copyLink: 'Copy link',
+    linkCopied: 'Link copied',
+    shareText: 'Join this jam on Jam Match',
+    shareUnavailable: 'Set VITE_TELEGRAM_BOT_USERNAME to enable sharing',
+    noAccessTitle: 'No access',
+    noAccessBody:
+      'You cannot open this jam. Ask the organiser to invite you or share another link.',
   },
   formats: {
     free_jam: 'Free jam',
