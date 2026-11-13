@@ -394,6 +394,18 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# Telegram Login / Mini App → session (JWT required; client sends anon or user JWT).
+[functions.telegram-auth]
+verify_jwt = true
+
+# Client-triggered join notify (user JWT; soft-fails if Telegram blocks).
+[functions.jam-notify]
+verify_jwt = true
+
+# Telegram Bot webhook — Telegram cannot send a Supabase JWT.
+[functions.telegram-webhook]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
