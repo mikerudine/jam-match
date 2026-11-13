@@ -57,6 +57,10 @@ export interface Profile {
   id: string
   display_name: string
   telegram_handle: string | null
+  telegram_id: number | null
+  telegram_first_name: string | null
+  telegram_last_name: string | null
+  telegram_photo_url: string | null
   instruments: Instrument[]
   genres: string[]
   level: Level

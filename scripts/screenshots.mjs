@@ -35,7 +35,13 @@ async function shot(page, name) {
 async function login(page, email) {
   await page.goto(BASE)
   await page.waitForTimeout(600)
-  await page.getByRole('button', { name: /Password \(local\)/i }).click()
+  // Email login is behind VITE_ENABLE_EMAIL_LOGIN — prefer that for seed screenshots.
+  const passwordTab = page.getByRole('button', {
+    name: /Пароль \(локально\)|Password \(local\)/i,
+  })
+  if (await passwordTab.count()) {
+    await passwordTab.click()
+  }
   await page.fill('input[type="email"]', email)
   await page.fill('input[type="password"]', 'password123')
   await page.getByRole('button', { name: /Увійти|Sign in/i }).click()

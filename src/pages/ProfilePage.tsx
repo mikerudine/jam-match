@@ -23,6 +23,8 @@ export function ProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [telegram, setTelegram] = useState('')
+  const [telegramPhoto, setTelegramPhoto] = useState<string | null>(null)
+  const [telegramLinked, setTelegramLinked] = useState(false)
   const [instruments, setInstruments] = useState<string[]>([])
   const [genres, setGenres] = useState<string[]>([])
   const [level, setLevel] = useState<Level>('intermediate')
@@ -50,6 +52,8 @@ export function ProfilePage() {
   function applyProfile(p: Profile) {
     setDisplayName(p.display_name)
     setTelegram(p.telegram_handle ?? '')
+    setTelegramPhoto(p.telegram_photo_url ?? null)
+    setTelegramLinked(p.telegram_id != null)
     setInstruments(p.instruments)
     setGenres(p.genres)
     setLevel(p.level)
@@ -111,12 +115,25 @@ export function ProfilePage() {
       </Field>
 
       <Field label={t.profile.telegram}>
+        {telegramPhoto && (
+          <img
+            src={telegramPhoto}
+            alt=""
+            className="mb-2 h-12 w-12 rounded-full border border-line object-cover"
+            referrerPolicy="no-referrer"
+          />
+        )}
         <input
           value={telegram}
           onChange={(e) => setTelegram(e.target.value)}
           placeholder="@username"
           className="field"
+          readOnly={telegramLinked}
+          title={telegramLinked ? t.profile.telegramFromAuth : undefined}
         />
+        {telegramLinked && (
+          <p className="mt-1 text-xs text-mute">{t.profile.telegramFromAuth}</p>
+        )}
       </Field>
 
       <Field label={t.profile.instruments}>
