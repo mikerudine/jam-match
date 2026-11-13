@@ -19,6 +19,7 @@ Same packaging approach as *One Day in Kyiv / kyiv-slots* and *Intercom*: one st
 3. Create jam request (format, genres, wanted line-up, time window, area/base, invite TTL)
 4. Matching + Inbox (Accept / Skip); expired invites cascade to the next candidate; scarce roles prioritized; confirmed jam shows contacts
 5. After-jam 2-question feedback → reliability score (matching tiebreaker)
+6. Per-jam song / cover list: participants add up to 10 songs each, +1/−1 votes, sorted by score with veto highlights
 
 Auth lives behind `src/auth/` (`AuthAdapter`). Production path is Telegram; seed/email login is opt-in via `VITE_ENABLE_EMAIL_LOGIN=true`.
 

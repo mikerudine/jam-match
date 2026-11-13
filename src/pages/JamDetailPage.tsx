@@ -6,10 +6,20 @@ import {
   runMatching,
   submitFeedback,
 } from '@/api/jams'
+import {
+  addJamSong,
+  deleteJamSong,
+  listJamSongs,
+  setSongVote,
+  updateJamSong,
+  type JamSongList,
+} from '@/api/songs'
 import { useAuth } from '@/auth/AuthContext'
 import { Loading } from '@/components/Loading'
+import { SongListSection } from '@/components/SongListSection'
 import { useLocale } from '@/i18n/LocaleContext'
 import { telegramAppName, telegramBotUsername } from '@/lib/config'
+import type { VoteValue } from '@/lib/songList'
 import { buildJamTelegramLink } from '@/lib/telegramDeepLink'
 import { copyTextToClipboard, shareJamLink } from '@/lib/telegramShare'
 
@@ -36,12 +46,19 @@ export function JamDetailPage() {
   const [detail, setDetail] = useState<Awaited<
     ReturnType<typeof getJamDetail>
   > | null>(null)
+  const [songList, setSongList] = useState<JamSongList | null>(null)
   const [feedbackDone, setFeedbackDone] = useState(false)
   const [rating, setRating] = useState(4)
   const [showedUp, setShowedUp] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [shareBusy, setShareBusy] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [songsBusy, setSongsBusy] = useState(false)
+
+  async function refreshSongs(id: string, userId: string) {
+    const list = await listJamSongs(id, userId)
+    setSongList(list)
+  }
 
   useEffect(() => {
     if (!jamId || !session) return
@@ -51,9 +68,17 @@ export function JamDetailPage() {
         await runMatching(jamId)
         const d = await getJamDetail(jamId)
         const done = await hasSubmittedFeedback(jamId, session.user.id)
+        let songs: JamSongList | null = null
+        try {
+          songs = await listJamSongs(jamId, session.user.id)
+        } catch {
+          // Non-participants get nothing from RLS; leave song list hidden.
+          songs = null
+        }
         if (!cancelled) {
           setDetail(d)
           setFeedbackDone(done)
+          setSongList(songs)
           setNoAccess(false)
         }
       } catch (err) {
@@ -61,6 +86,7 @@ export function JamDetailPage() {
           if (isNoAccessError(err)) {
             setNoAccess(true)
             setError(null)
+            setSongList(null)
           } else {
             setError(err instanceof Error ? err.message : t.common.error)
           }
@@ -136,6 +162,17 @@ export function JamDetailPage() {
       window.setTimeout(() => setCopied(false), 2000)
     } else {
       setError(t.common.error)
+    }
+  }
+
+  async function withSongs(action: () => Promise<void>) {
+    if (!jamId || !session) return
+    setSongsBusy(true)
+    try {
+      await action()
+      await refreshSongs(jamId, session.user.id)
+    } finally {
+      setSongsBusy(false)
     }
   }
 
@@ -260,6 +297,35 @@ export function JamDetailPage() {
           })}
         </ul>
       </section>
+
+      {songList && session ? (
+        <SongListSection
+          userId={session.user.id}
+          items={songList.items}
+          songs={songList.songs}
+          busy={songsBusy}
+          onAdd={async ({ title, artist }) => {
+            await withSongs(async () => {
+              await addJamSong({ jam_id: jam.id, title, artist })
+            })
+          }}
+          onUpdate={async ({ id, title, artist }) => {
+            await withSongs(async () => {
+              await updateJamSong({ id, title, artist })
+            })
+          }}
+          onDelete={async (songId) => {
+            await withSongs(async () => {
+              await deleteJamSong(songId)
+            })
+          }}
+          onVote={async (songId, value: VoteValue | null) => {
+            await withSongs(async () => {
+              await setSongVote({ song_id: songId, value })
+            })
+          }}
+        />
+      ) : null}
 
       {jam.status === 'confirmed' && (
         <section className="rounded-2xl border border-ok/30 bg-ok/10 p-4 text-sm">
