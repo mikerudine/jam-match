@@ -12,7 +12,8 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "seed": "node scripts/seed.mjs",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "test": "node --experimental-strip-types --test supabase/functions/telegram-auth/telegram_crypto.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

@@ -20,15 +20,28 @@ const uk = {
   auth: {
     title: 'Увійти',
     email: 'Email',
+    password: 'Пароль',
     sendLink: 'Надіслати magic link',
     sent: 'Перевірте пошту — ми надіслали посилання для входу.',
     signOut: 'Вийти',
     magicHint: 'Без пароля: відкрийте лист і перейдіть за посиланням.',
+    magicLink: 'Magic link',
+    passwordLocal: 'Пароль (локально)',
+    telegramHint:
+      'Увійдіть через Telegram — так ми покажемо @username у підтвердженому джемі.',
+    telegramMiniApp: 'Вхід через Telegram Mini App…',
+    telegramBotMissing:
+      'Віджет з’явиться після налаштування VITE_TELEGRAM_BOT_USERNAME.',
+    telegramButton: 'Увійти через Telegram',
+    telegramDomainHint:
+      'На проді віджет з’явиться після /setdomain у @BotFather для mikerudine.github.io.',
+    devEmail: 'Dev: email (seed)',
   },
   profile: {
     title: 'Профіль',
     displayName: "Ім'я",
     telegram: 'Telegram @handle',
+    telegramFromAuth: 'Підтягнуто з Telegram при вході (контакт у підтвердженому джемі).',
     instruments: 'Інструменти / ролі',
     genres: 'Жанри',
     level: 'Рівень',
@@ -140,15 +153,28 @@ const en = {
   auth: {
     title: 'Sign in',
     email: 'Email',
+    password: 'Password',
     sendLink: 'Send magic link',
     sent: 'Check your email for the sign-in link.',
     signOut: 'Sign out',
     magicHint: 'No password — open the email and tap the link.',
+    magicLink: 'Magic link',
+    passwordLocal: 'Password (local)',
+    telegramHint:
+      'Sign in with Telegram — your @username is the contact shown on a confirmed jam.',
+    telegramMiniApp: 'Signing in via Telegram Mini App…',
+    telegramBotMissing:
+      'The widget appears once VITE_TELEGRAM_BOT_USERNAME is set.',
+    telegramButton: 'Log in with Telegram',
+    telegramDomainHint:
+      'On production the widget appears after BotFather /setdomain for mikerudine.github.io.',
+    devEmail: 'Dev: email (seed)',
   },
   profile: {
     title: 'Profile',
     displayName: 'Display name',
     telegram: 'Telegram @handle',
+    telegramFromAuth: 'Synced from Telegram on sign-in (contact on a confirmed jam).',
     instruments: 'Instruments / roles',
     genres: 'Genres',
     level: 'Level',
