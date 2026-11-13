@@ -1,6 +1,11 @@
 import { useEffect, useRef } from 'react'
-import { telegramBotUsername } from '@/lib/config'
+import {
+  isKnownTelegramOauthEvent,
+  isTelegramWidgetUser,
+  parseTelegramOauthMessage,
+} from '@/auth/telegramWidgetAuth'
 import type { TelegramWidgetUser } from '@/auth/types'
+import { telegramBotUsername } from '@/lib/config'
 import { useLocale } from '@/i18n/LocaleContext'
 
 interface Props {
@@ -11,54 +16,74 @@ interface Props {
 /** Hosts allow-listed via BotFather /setdomain for the Login Widget. */
 const WIDGET_HOSTS = new Set(['mikerudine.github.io'])
 
-function isWidgetUser(value: unknown): value is TelegramWidgetUser {
-  if (!value || typeof value !== 'object') return false
-  const v = value as Record<string, unknown>
-  return (
-    typeof v.id === 'number' &&
-    typeof v.hash === 'string' &&
-    typeof v.auth_date === 'number'
-  )
-}
-
 function hostAllowsWidget(): boolean {
   if (typeof window === 'undefined') return false
   return WIDGET_HOSTS.has(window.location.hostname)
 }
 
 /**
- * Telegram Login via oauth.telegram.org embed (no document.write).
- * Requires BotFather /setdomain for the page host (mikerudine.github.io).
- * Off that host we show a branded placeholder + setup hint (widget cannot work).
+ * Telegram Login via the official widget script (telegram-widget.js).
+ * Uses data-onauth → window.__jamTgAuth so postMessage `auth_user` /
+ * auth_data is handled by Telegram's script (incl. return_to + iOS redirect).
  */
 export function TelegramLoginButton({ onAuth, lang = 'uk' }: Props) {
   const { t } = useLocale()
   const onAuthRef = useRef(onAuth)
   onAuthRef.current = onAuth
+  const containerRef = useRef<HTMLDivElement>(null)
   const canEmbed = hostAllowsWidget()
 
   useEffect(() => {
-    if (!canEmbed) return
+    if (!canEmbed || !telegramBotUsername) return
+
+    let lastHash: string | null = null
+    function deliver(user: TelegramWidgetUser) {
+      if (!isTelegramWidgetUser(user)) return
+      // Widget data-onauth and our message listener may both fire.
+      if (lastHash === user.hash) return
+      lastHash = user.hash
+      onAuthRef.current(user)
+    }
+
+    window.__jamTgAuth = deliver
 
     function onMessage(event: MessageEvent) {
       if (event.origin !== 'https://oauth.telegram.org') return
-      let data: unknown = event.data
-      if (typeof data === 'string') {
-        try {
-          data = JSON.parse(data)
-        } catch {
-          return
-        }
+      const user = parseTelegramOauthMessage(event.data)
+      if (user) {
+        deliver(user)
+        return
       }
-      const payload =
-        data && typeof data === 'object' && 'result' in data
-          ? (data as { result: unknown }).result
-          : data
-      if (isWidgetUser(payload)) onAuthRef.current(payload)
+      if (!isKnownTelegramOauthEvent(event.data)) {
+        console.warn(
+          '[TelegramLogin] Unrecognised oauth.telegram.org message',
+          event.data,
+        )
+      }
     }
     window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
-  }, [canEmbed])
+
+    const container = containerRef.current
+    if (container) {
+      container.innerHTML = ''
+      const script = document.createElement('script')
+      script.async = true
+      script.src = 'https://telegram.org/js/telegram-widget.js?22'
+      script.setAttribute('data-telegram-login', telegramBotUsername)
+      script.setAttribute('data-size', 'large')
+      script.setAttribute('data-request-access', 'write')
+      script.setAttribute('data-radius', '12')
+      script.setAttribute('data-onauth', '__jamTgAuth(user)')
+      if (lang === 'uk') script.setAttribute('data-lang', 'uk')
+      container.appendChild(script)
+    }
+
+    return () => {
+      window.removeEventListener('message', onMessage)
+      if (window.__jamTgAuth) delete window.__jamTgAuth
+      if (container) container.innerHTML = ''
+    }
+  }, [canEmbed, lang])
 
   if (!telegramBotUsername) {
     return (
@@ -83,24 +108,9 @@ export function TelegramLoginButton({ onAuth, lang = 'uk' }: Props) {
     )
   }
 
-  const origin = encodeURIComponent(window.location.origin)
-  const src =
-    `https://oauth.telegram.org/embed/${encodeURIComponent(telegramBotUsername)}` +
-    `?origin=${origin}&size=large&request_access=write&radius=12` +
-    (lang === 'uk' ? '&lang=uk' : '')
-
   return (
     <div className="text-center">
-      <iframe
-        id="jam-match-telegram-login"
-        title={t.auth.telegramButton}
-        src={src}
-        width={260}
-        height={48}
-        className="mx-auto border-0"
-        scrolling="no"
-        style={{ overflow: 'hidden' }}
-      />
+      <div ref={containerRef} className="mx-auto inline-block min-h-10" />
     </div>
   )
 }

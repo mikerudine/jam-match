@@ -30,6 +30,8 @@ const uk = {
     telegramHint:
       'Увійдіть через Telegram — так ми покажемо @username у підтвердженому джемі.',
     telegramMiniApp: 'Вхід через Telegram Mini App…',
+    signingIn: 'Вхожу…',
+    telegramAuthFailed: 'Не вдалося увійти через Telegram',
     telegramBotMissing:
       'Віджет з’явиться після налаштування VITE_TELEGRAM_BOT_USERNAME.',
     telegramButton: 'Увійти через Telegram',
@@ -163,6 +165,8 @@ const en = {
     telegramHint:
       'Sign in with Telegram — your @username is the contact shown on a confirmed jam.',
     telegramMiniApp: 'Signing in via Telegram Mini App…',
+    signingIn: 'Signing in…',
+    telegramAuthFailed: 'Could not sign in with Telegram',
     telegramBotMissing:
       'The widget appears once VITE_TELEGRAM_BOT_USERNAME is set.',
     telegramButton: 'Log in with Telegram',

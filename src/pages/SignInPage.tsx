@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useAuth } from '@/auth/AuthContext'
+import { takePendingTelegramWidgetUser } from '@/auth/telegramWidgetAuth'
 import type { TelegramWidgetUser } from '@/auth/types'
 import { TelegramLoginButton } from '@/components/TelegramLoginButton'
 import { emailLoginEnabled, telegramBotUsername } from '@/lib/config'
@@ -16,6 +17,29 @@ export function SignInPage() {
   const [mode, setMode] = useState<'magic' | 'password'>('password')
   const [miniAppTrying, setMiniAppTrying] = useState(false)
   const miniAppAttempted = useRef(false)
+  const redirectAttempted = useRef(false)
+
+  function telegramErrorMessage(err: unknown): string {
+    const detail = err instanceof Error ? err.message : ''
+    return detail
+      ? `${t.auth.telegramAuthFailed}: ${detail}`
+      : t.auth.telegramAuthFailed
+  }
+
+  // Redirect fallback: #tgAuthResult stripped in main.tsx before HashRouter.
+  useEffect(() => {
+    if (!auth || redirectAttempted.current) return
+    const user = takePendingTelegramWidgetUser()
+    if (!user) return
+
+    redirectAttempted.current = true
+    setBusy(true)
+    setError(null)
+    auth
+      .signInWithTelegramWidget(user)
+      .catch((err) => setError(telegramErrorMessage(err)))
+      .finally(() => setBusy(false))
+  }, [auth, t.auth.telegramAuthFailed])
 
   // Telegram Mini App: if initData is present, sign in automatically.
   useEffect(() => {
@@ -31,11 +55,9 @@ export function SignInPage() {
 
     auth
       .signInWithTelegramInitData(initData)
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : t.common.error)
-      })
+      .catch((err) => setError(telegramErrorMessage(err)))
       .finally(() => setMiniAppTrying(false))
-  }, [auth, t.common.error])
+  }, [auth, t.auth.telegramAuthFailed])
 
   async function onTelegramWidget(user: TelegramWidgetUser) {
     if (!auth) return
@@ -44,7 +66,7 @@ export function SignInPage() {
     try {
       await auth.signInWithTelegramWidget(user)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.common.error)
+      setError(telegramErrorMessage(err))
     } finally {
       setBusy(false)
     }
@@ -89,11 +111,21 @@ export function SignInPage() {
           </div>
         )}
 
+        {busy && !miniAppTrying && (
+          <p className="text-sm text-teal" role="status">
+            {t.auth.signingIn}
+          </p>
+        )}
+
         {!telegramBotUsername && (
           <p className="text-xs text-mute">{t.auth.telegramBotMissing}</p>
         )}
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && (
+          <p className="text-sm text-danger" role="alert">
+            {error}
+          </p>
+        )}
       </div>
 
       {emailLoginEnabled && (
