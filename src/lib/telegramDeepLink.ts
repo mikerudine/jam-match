@@ -60,16 +60,20 @@ export interface BuildJamTelegramLinkOptions {
   appName?: string
 }
 
-/** https://t.me/<bot>/<app>?startapp=jam_<id> */
+/**
+ * Main Mini App (empty appName): https://t.me/<bot>?startapp=jam_<id>
+ * Named /newapp: https://t.me/<bot>/<app>?startapp=jam_<id>
+ */
 export function buildJamTelegramLink(
   jamId: string,
   options: BuildJamTelegramLinkOptions,
 ): string {
   const bot = options.botUsername.trim().replace(/^@/, '')
   if (!bot) throw new Error('Telegram bot username is required')
-  const app = (options.appName ?? 'jam').trim() || 'jam'
+  const app = (options.appName ?? '').trim()
   const startapp = encodeJamStartParam(jamId)
-  return `https://t.me/${bot}/${app}?startapp=${startapp}`
+  const path = app ? `${bot}/${app}` : bot
+  return `https://t.me/${path}?startapp=${startapp}`
 }
 
 /**

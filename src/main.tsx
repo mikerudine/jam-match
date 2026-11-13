@@ -15,7 +15,7 @@ if (tgRedirectUser) {
   setPendingTelegramWidgetUser(tgRedirectUser)
 }
 
-// Direct Mini App links (t.me/<bot>/jam?startapp=jam_<id>) expose start_param
+// Direct Mini App links (t.me/<bot>?startapp=jam_<id>) expose start_param
 // via initDataUnsafe or tgWebAppStartParam — capture before routing.
 capturePendingJamFromStartParam()
 

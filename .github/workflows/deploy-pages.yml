@@ -29,8 +29,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_TELEGRAM_BOT_USERNAME: ${{ secrets.VITE_TELEGRAM_BOT_USERNAME }}
-          # Optional repo variable; defaults to "jam" when unset (no secret required).
-          VITE_TELEGRAM_APP_NAME: ${{ vars.VITE_TELEGRAM_APP_NAME || 'jam' }}
+          # Optional: named /newapp short name. Empty = Main Mini App (t.me/<bot>?startapp=…).
+          VITE_TELEGRAM_APP_NAME: ${{ vars.VITE_TELEGRAM_APP_NAME }}
         run: npm run build
       - name: Ensure Supabase env was baked in (when secrets are set)
         run: |

@@ -4,7 +4,7 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL?: string
   readonly VITE_SUPABASE_ANON_KEY?: string
   readonly VITE_TELEGRAM_BOT_USERNAME?: string
-  /** BotFather Mini App short name; defaults to "jam". */
+  /** Optional BotFather /newapp short name; empty = Main Mini App link. */
   readonly VITE_TELEGRAM_APP_NAME?: string
   /** Set to "true" to show email/password (local seed) on the sign-in screen. */
   readonly VITE_ENABLE_EMAIL_LOGIN?: string

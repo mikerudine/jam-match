@@ -59,7 +59,30 @@ describe('encodeJamStartParam / decodeJamStartParam', () => {
 })
 
 describe('buildJamTelegramLink', () => {
-  it('builds t.me/<bot>/<app>?startapp=jam_<id>', () => {
+  it('builds Main Mini App link when appName is empty', () => {
+    assert.equal(
+      buildJamTelegramLink(SAMPLE_UUID, {
+        botUsername: 'jammatch_bot',
+      }),
+      `https://t.me/jammatch_bot?startapp=jam_${SAMPLE_HEX}`,
+    )
+    assert.equal(
+      buildJamTelegramLink(SAMPLE_UUID, {
+        botUsername: 'jammatch_bot',
+        appName: '',
+      }),
+      `https://t.me/jammatch_bot?startapp=jam_${SAMPLE_HEX}`,
+    )
+  })
+
+  it('strips @ from bot username', () => {
+    assert.equal(
+      buildJamTelegramLink(SAMPLE_UUID, { botUsername: '@jammatch_bot' }),
+      `https://t.me/jammatch_bot?startapp=jam_${SAMPLE_HEX}`,
+    )
+  })
+
+  it('uses named /newapp path when appName is set', () => {
     assert.equal(
       buildJamTelegramLink(SAMPLE_UUID, {
         botUsername: 'jammatch_bot',
@@ -67,16 +90,6 @@ describe('buildJamTelegramLink', () => {
       }),
       `https://t.me/jammatch_bot/jam?startapp=jam_${SAMPLE_HEX}`,
     )
-  })
-
-  it('strips @ from bot username and defaults app to jam', () => {
-    assert.equal(
-      buildJamTelegramLink(SAMPLE_UUID, { botUsername: '@jammatch_bot' }),
-      `https://t.me/jammatch_bot/jam?startapp=jam_${SAMPLE_HEX}`,
-    )
-  })
-
-  it('uses custom app name', () => {
     assert.equal(
       buildJamTelegramLink(SAMPLE_UUID, {
         botUsername: 'jammatch_bot',

@@ -14,12 +14,12 @@ export const telegramBotUsername = (
 ).trim().replace(/^@/, '')
 
 /**
- * BotFather Mini App short name used in t.me/<bot>/<app>?startapp=…
- * Defaults to `jam` (no secret required).
+ * Optional BotFather /newapp short name for t.me/<bot>/<app>?startapp=…
+ * Empty (default) → Main Mini App link: t.me/<bot>?startapp=…
  */
 export const telegramAppName = (
-  import.meta.env.VITE_TELEGRAM_APP_NAME ?? 'jam'
-).trim() || 'jam'
+  import.meta.env.VITE_TELEGRAM_APP_NAME ?? ''
+).trim()
 
 /**
  * Email / password magic-link UI for local seed accounts.
