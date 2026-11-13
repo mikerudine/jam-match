@@ -14,6 +14,7 @@
     "seed": "node scripts/seed.mjs",
     "screenshots": "node scripts/screenshots.mjs",
     "screenshots:edit-jam": "node scripts/edit-jam-preview.mjs",
+    "screenshots:join-request": "node scripts/join-request-preview.mjs",
     "test": "node --experimental-strip-types --test supabase/functions/telegram-auth/telegram_crypto.test.ts src/auth/telegramWidgetAuth.test.ts src/lib/telegramDeepLink.test.ts src/lib/songList.test.ts"
   },
   "dependencies": {

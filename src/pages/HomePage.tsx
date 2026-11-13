@@ -133,7 +133,11 @@ export function HomePage() {
                   <p className="mt-3 text-xs text-mute">
                     {t.home.seats}:{' '}
                     {jam.seats
-                      .map((s) => t.instruments[s.role])
+                      .map((s) =>
+                        s.role_label?.trim()
+                          ? s.role_label.trim()
+                          : t.instruments[s.role],
+                      )
                       .join(' · ')}
                     {open > 0 && (
                       <span className="text-amber">

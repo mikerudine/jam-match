@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   getJamDetail,
+  getMyJoinRequest,
   hasSubmittedFeedback,
   runMatching,
   submitFeedback,
@@ -16,6 +17,8 @@ import {
 } from '@/api/songs'
 import { useAuth } from '@/auth/AuthContext'
 import { EditJamSection } from '@/components/EditJamSection'
+import { JoinRequestForm } from '@/components/JoinRequestForm'
+import { JoinRequestsPanel } from '@/components/JoinRequestsPanel'
 import { Loading } from '@/components/Loading'
 import { SongListSection } from '@/components/SongListSection'
 import { useLocale } from '@/i18n/LocaleContext'
@@ -23,6 +26,8 @@ import { telegramAppName, telegramBotUsername } from '@/lib/config'
 import type { VoteValue } from '@/lib/songList'
 import { buildJamTelegramLink } from '@/lib/telegramDeepLink'
 import { copyTextToClipboard, shareJamLink } from '@/lib/telegramShare'
+import { seatRoleLabel } from '@/lib/utils'
+import type { JamJoinRequest } from '@/types'
 
 function isNoAccessError(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false
@@ -55,6 +60,8 @@ export function JamDetailPage() {
   const [shareBusy, setShareBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [songsBusy, setSongsBusy] = useState(false)
+  const [myJoin, setMyJoin] = useState<JamJoinRequest | null>(null)
+  const [joinRefresh, setJoinRefresh] = useState(0)
 
   async function refreshSongs(id: string, userId: string) {
     const list = await listJamSongs(id, userId)
@@ -76,10 +83,15 @@ export function JamDetailPage() {
           // Non-participants get nothing from RLS; leave song list hidden.
           songs = null
         }
+        const join =
+          d.jam.creator_id === session.user.id
+            ? null
+            : await getMyJoinRequest(jamId, session.user.id)
         if (!cancelled) {
           setDetail(d)
           setFeedbackDone(done)
           setSongList(songs)
+          setMyJoin(join)
           setNoAccess(false)
         }
       } catch (err) {
@@ -205,11 +217,20 @@ export function JamDetailPage() {
     !feedbackDone &&
     new Date(jam.window_end).getTime() < Date.now()
   const canShare = Boolean(telegramBotUsername)
+  const canRequestJoin =
+    !isInitiator &&
+    !isMember &&
+    jam.status === 'matching' &&
+    new Date(jam.window_end).getTime() > Date.now()
 
   async function refreshDetail() {
-    if (!jamId) return
+    if (!jamId || !session) return
     const d = await getJamDetail(jamId)
     setDetail(d)
+    if (d.jam.creator_id !== session.user.id) {
+      setMyJoin(await getMyJoinRequest(jamId, session.user.id))
+    }
+    setJoinRefresh((n) => n + 1)
   }
 
   return (
@@ -262,6 +283,22 @@ export function JamDetailPage() {
         <EditJamSection jam={jam} seats={seats} onUpdated={refreshDetail} />
       ) : null}
 
+      {isInitiator ? (
+        <JoinRequestsPanel
+          jam={jam}
+          refreshKey={joinRefresh}
+          onChanged={refreshDetail}
+        />
+      ) : null}
+
+      {canRequestJoin || myJoin ? (
+        <JoinRequestForm
+          jam={jam}
+          existing={myJoin}
+          onSubmitted={refreshDetail}
+        />
+      ) : null}
+
       <section className="rounded-2xl border border-line bg-panel/90 p-4">
         <h2 className="text-sm text-mute">{t.home.seats}</h2>
         <ul className="mt-3 space-y-3">
@@ -274,7 +311,7 @@ export function JamDetailPage() {
               >
                 <div>
                   <p className="font-medium">
-                    {t.instruments[seat.role]}
+                    {seatRoleLabel(seat, t.instruments)}
                     {seat.is_creator ? (
                       <span className="text-mute"> ({t.common.me})</span>
                     ) : null}

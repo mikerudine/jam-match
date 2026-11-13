@@ -4,6 +4,7 @@ import type {
   Instrument,
   JamFormat,
   JamInvite,
+  JamJoinRequest,
   JamRequest,
   JamSeat,
   Profile,
@@ -258,4 +259,80 @@ export async function hasSubmittedFeedback(
     .maybeSingle()
   if (error) throw error
   return Boolean(data)
+}
+
+export async function requestToJoin(input: {
+  jam_id: string
+  role: string
+  note?: string
+}): Promise<string> {
+  const { data, error } = await getSupabase().rpc('request_to_join', {
+    p_jam_id: input.jam_id,
+    p_role: input.role,
+    p_note: input.note ?? null,
+  })
+  if (error) throw error
+  return data as string
+}
+
+export async function respondToJoinRequest(
+  requestId: string,
+  accept: boolean,
+): Promise<void> {
+  const { error } = await getSupabase().rpc('respond_to_join_request', {
+    p_request_id: requestId,
+    p_accept: accept,
+  })
+  if (error) throw error
+}
+
+export async function listJoinRequestsForJam(
+  jamId: string,
+): Promise<
+  Array<
+    JamJoinRequest & {
+      requester: Pick<
+        Profile,
+        'id' | 'display_name' | 'telegram_handle' | 'instruments'
+      > | null
+    }
+  >
+> {
+  const supabase = getSupabase()
+  const { data, error } = await supabase
+    .from('jam_join_requests')
+    .select('*')
+    .eq('jam_id', jamId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  if (!data?.length) return []
+
+  const ids = [...new Set(data.map((r) => r.requester_id as string))]
+  const { data: profiles, error: pErr } = await supabase
+    .from('profiles')
+    .select('id, display_name, telegram_handle, instruments')
+    .in('id', ids)
+  if (pErr) throw pErr
+
+  return data.map((row) => ({
+    ...(row as JamJoinRequest),
+    requester:
+      (profiles ?? []).find((p) => p.id === row.requester_id) ?? null,
+  }))
+}
+
+export async function getMyJoinRequest(
+  jamId: string,
+  userId: string,
+): Promise<JamJoinRequest | null> {
+  const { data, error } = await getSupabase()
+    .from('jam_join_requests')
+    .select('*')
+    .eq('jam_id', jamId)
+    .eq('requester_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return (data as JamJoinRequest | null) ?? null
 }
