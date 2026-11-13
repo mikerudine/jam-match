@@ -1,6 +1,6 @@
 # Jam Match
 
-Mobile-first SPA that auto-assembles jam / rehearsal line-ups for a local musicians’ community (~400 people, Kyiv · Podil). Ukrainian UI by default, English available.
+Mobile-first SPA that auto-assembles jam / rehearsal line-ups for a local musicians’ community (~400 people, Kyiv). Ukrainian UI by default, English available.
 
 Same packaging approach as *One Day in Kyiv / kyiv-slots* and *Intercom*: one static Vite + React + TypeScript build → GitHub Pages, later Telegram Mini App / iOS WKWebView / Android WebView. No SSR. Hash routing + relative `base` so the same bundle runs under any host path.
 
