@@ -4,6 +4,7 @@ export type JamFormat = 'free_jam' | 'cover_practice' | 'permanent_band'
 export type JamStatus = 'matching' | 'confirmed' | 'cancelled' | 'completed'
 export type SeatStatus = 'open' | 'invited' | 'filled'
 export type InviteStatus = 'pending' | 'accepted' | 'skipped' | 'expired'
+export type JoinRequestStatus = 'pending' | 'accepted' | 'declined'
 export type Locale = 'uk' | 'en'
 
 export const INSTRUMENTS: Instrument[] = [
@@ -98,10 +99,24 @@ export interface JamSeat {
   id: string
   jam_id: string
   role: Instrument
+  /** Freeform label when role is other (e.g. maracas). */
+  role_label: string | null
   filled_by: string | null
   is_creator: boolean
   status: SeatStatus
   sort_order: number
+}
+
+export interface JamJoinRequest {
+  id: string
+  jam_id: string
+  requester_id: string
+  role: string
+  note: string | null
+  status: JoinRequestStatus
+  seat_id: string | null
+  created_at: string
+  responded_at: string | null
 }
 
 export interface JamInvite {
