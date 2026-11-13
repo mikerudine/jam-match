@@ -4,7 +4,7 @@ export type Locale = 'uk' | 'en'
 
 const uk = {
   brand: 'Jam Match',
-  tagline: 'Збирає лінійку для джему в Подолі',
+  tagline: 'Просто збираємо джем',
   nav: {
     home: 'Джеми',
     inbox: 'Інбокс',
@@ -84,6 +84,7 @@ const uk = {
     start: 'Початок',
     end: 'Кінець',
     area: 'Район',
+    areaRequired: 'Оберіть район',
     base: 'База / місце (необовʼязково)',
     ttl: 'Час на відповідь (год)',
     create: 'Створити й шукати',
@@ -139,7 +140,7 @@ const uk = {
 
 const en = {
   brand: 'Jam Match',
-  tagline: 'Auto-assembles jam line-ups in Podil',
+  tagline: 'Just getting a jam together',
   nav: {
     home: 'Jams',
     inbox: 'Inbox',
@@ -219,6 +220,7 @@ const en = {
     start: 'Start',
     end: 'End',
     area: 'Area',
+    areaRequired: 'Pick an area',
     base: 'Base / place (optional)',
     ttl: 'Invite reply window (h)',
     create: 'Create & match',

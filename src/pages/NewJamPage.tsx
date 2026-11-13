@@ -38,7 +38,7 @@ export function NewJamPage() {
   const [date, setDate] = useState(defaultDate)
   const [start, setStart] = useState('19:00')
   const [end, setEnd] = useState('21:00')
-  const [area, setArea] = useState('Podil')
+  const [area, setArea] = useState('')
   const [baseName, setBaseName] = useState('')
   const [ttl, setTtl] = useState(3)
 
@@ -65,6 +65,10 @@ export function NewJamPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     if (!session || !profile) return
+    if (!area.trim()) {
+      setError(t.jam.areaRequired)
+      return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -73,7 +77,7 @@ export function NewJamPage() {
       const jamId = await createJam({
         format,
         genres,
-        area,
+        area: area.trim(),
         base_name: baseName.trim() || undefined,
         window_start,
         window_end,
@@ -223,9 +227,10 @@ export function NewJamPage() {
         <ChipSelect
           multiple={false}
           options={AREA_OPTIONS.map((a) => ({ value: a, label: a }))}
-          value={[area]}
-          onChange={(v) => setArea(v[0] || 'Podil')}
+          value={area ? [area] : []}
+          onChange={(v) => setArea(v[0] || '')}
         />
+        {!area && <p className="text-xs text-amber">{t.jam.areaRequired}</p>}
       </section>
 
       <label className="block text-sm text-mute">
@@ -252,7 +257,7 @@ export function NewJamPage() {
 
       <button
         type="submit"
-        disabled={busy || wanted.length === 0 || genres.length === 0}
+        disabled={busy || wanted.length === 0 || genres.length === 0 || !area.trim()}
         className="w-full rounded-xl bg-amber px-4 py-3 font-semibold text-ink hover:bg-amber-deep disabled:opacity-60"
       >
         {t.jam.create}

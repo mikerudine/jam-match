@@ -15,7 +15,7 @@ export function ChipSelect({
 }: ChipSelectProps) {
   function toggle(v: string) {
     if (!multiple) {
-      onChange([v])
+      onChange(value.includes(v) ? [] : [v])
       return
     }
     if (value.includes(v)) onChange(value.filter((x) => x !== v))
