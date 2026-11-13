@@ -113,8 +113,11 @@ It also checks `auth_date` freshness (24h), creates/finds a Supabase Auth user (
 | Variable | Where | Purpose |
 | --- | --- | --- |
 | `VITE_TELEGRAM_BOT_USERNAME` | `.env` / GitHub Actions secret | Bot username **without** `@` for the Login Widget |
+| `VITE_TELEGRAM_APP_NAME` | `.env` / optional Actions **variable** (not a secret) | BotFather Mini App short name for `t.me/<bot>/<app>?startapp=…` (default `jam`) |
 
-Add the same secret in repo **Settings → Secrets and variables → Actions**, and wire it into [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml).
+Add the bot username secret in repo **Settings → Secrets and variables → Actions**, and wire it into [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml). `VITE_TELEGRAM_APP_NAME` defaults to `jam` when unset.
+
+Jam detail **Share in Telegram** builds `https://t.me/<bot>/<app>?startapp=jam_<uuid-without-dashes>`. Opening that link launches the Mini App with `start_param`; after initData auto-login the app navigates to `/jams/:id`.
 
 ## Supabase env / secrets
 
