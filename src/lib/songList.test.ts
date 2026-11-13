@@ -9,6 +9,7 @@ import {
   buildSongList,
   canAddSong,
   countOwnSongs,
+  formatSongScoreLine,
   nextVoteValue,
   normalizeSongArtist,
   normalizeSongTitle,
@@ -112,5 +113,13 @@ describe('normalize + nextVoteValue', () => {
     assert.equal(nextVoteValue(1, 1), null)
     assert.equal(nextVoteValue(1, -1), -1)
     assert.equal(nextVoteValue(-1, -1), null)
+  })
+})
+
+describe('formatSongScoreLine', () => {
+  it('shows pluses / minuses · total score', () => {
+    assert.equal(formatSongScoreLine(3, 1, 2), '+3 / −1 · 2')
+    assert.equal(formatSongScoreLine(1, 2, -1), '+1 / −2 · −1')
+    assert.equal(formatSongScoreLine(0, 0, 0), '+0 / −0 · 0')
   })
 })

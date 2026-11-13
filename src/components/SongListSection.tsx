@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import {
   MAX_SONGS_PER_USER,
   canAddSong,
+  formatSongScoreLine,
   nextVoteValue,
   type SongListItem,
   type SongRow,
@@ -176,24 +177,16 @@ export function SongListSection({
                           {item.song.artist}
                         </p>
                       ) : null}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-mute">
-                        <span className="tabular-nums">
-                          {t.songs.score}: {item.score > 0 ? '+' : ''}
-                          {item.score}
-                        </span>
-                        <span className="tabular-nums text-teal">
-                          +{item.plus}
-                        </span>
-                        <span
-                          className={cn(
-                            'tabular-nums',
-                            item.hasVeto ? 'font-semibold text-danger' : '',
-                          )}
-                        >
-                          −{item.minus}
-                          {item.hasVeto ? ` · ${t.songs.veto}` : ''}
-                        </span>
-                      </div>
+                      <p
+                        className={cn(
+                          'mt-1.5 text-xs tabular-nums',
+                          item.hasVeto ? 'font-medium text-danger' : 'text-mute',
+                        )}
+                        aria-label={t.songs.score}
+                      >
+                        {formatSongScoreLine(item.plus, item.minus, item.score)}
+                        {item.hasVeto ? ` · ${t.songs.veto}` : ''}
+                      </p>
                       {mine ? (
                         <div className="mt-2 flex gap-2">
                           <button

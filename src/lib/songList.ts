@@ -100,3 +100,12 @@ export function nextVoteValue(
 ): VoteValue | null {
   return current === tapped ? null : tapped
 }
+
+/**
+ * Display line: pluses / minuses · total score (pluses − minuses).
+ * Example: "+3 / −1 · 2"
+ */
+export function formatSongScoreLine(plus: number, minus: number, score: number): string {
+  const total = score < 0 ? `−${Math.abs(score)}` : String(score)
+  return `+${plus} / −${minus} · ${total}`
+}
