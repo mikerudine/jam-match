@@ -26,6 +26,16 @@ interface TelegramNamespace {
 
 interface Window {
   Telegram?: TelegramNamespace
+  /** Official Login Widget data-onauth callback (bound by TelegramLoginButton). */
+  __jamTgAuth?: (user: {
+    id: number
+    first_name: string
+    last_name?: string
+    username?: string
+    photo_url?: string
+    auth_date: number
+    hash: string
+  }) => void
   onTelegramAuth?: (user: {
     id: number
     first_name: string
