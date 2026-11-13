@@ -106,7 +106,7 @@ The function verifies the Telegram hash server-side:
 | Login Widget | `SHA256(bot_token)` then HMAC-SHA256 | Website widget callback |
 | Mini App | `HMAC_SHA256(bot_token, key="WebAppData")` | `window.Telegram.WebApp.initData` |
 
-It also checks `auth_date` freshness (24h), creates/finds a Supabase Auth user (`tg<id>@telegram.jam-match.local`), upserts `jam.profiles` Telegram fields, and returns a `token_hash` the client exchanges via `verifyOtp` so `auth.uid()` / RLS keep working.
+It also checks `auth_date` freshness (24h), creates/finds a Supabase Auth user (`tg<id>@telegram.jam-match.local` + Telegram fields in `user_metadata`), and returns a `token_hash` the client exchanges via `verifyOtp`. The SPA then calls **`jam.ensure_profile()`** (security definer, idempotent, `auth.uid()`) to create/update `jam.profiles` — there is **no trigger on `auth.users`** (auth is shared with other apps in this project).
 
 ### 3. Frontend build variable
 

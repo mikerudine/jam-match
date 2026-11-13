@@ -1,4 +1,5 @@
 import type { Session } from '@supabase/supabase-js'
+import { ensureProfile } from '@/api/profile'
 import { supabaseConfig } from '@/lib/config'
 import { getSupabase } from '@/lib/supabase'
 import type {
@@ -23,6 +24,13 @@ interface TelegramAuthResponse {
   email: string
   user_id: string
   error?: string
+  telegram?: {
+    id: number
+    username: string | null
+    first_name: string | null
+    last_name: string | null
+    photo_url: string | null
+  }
 }
 
 async function exchangeTelegramAuth(body: Record<string, unknown>): Promise<void> {
@@ -55,6 +63,21 @@ async function exchangeTelegramAuth(body: Record<string, unknown>): Promise<void
     type: 'email',
   })
   if (error) throw error
+
+  const tg = payload.telegram
+  const display =
+    [tg?.first_name, tg?.last_name].filter(Boolean).join(' ').trim() ||
+    tg?.username ||
+    null
+
+  await ensureProfile({
+    display_name: display,
+    telegram_id: tg?.id ?? null,
+    telegram_username: tg?.username ?? null,
+    telegram_first_name: tg?.first_name ?? null,
+    telegram_last_name: tg?.last_name ?? null,
+    telegram_photo_url: tg?.photo_url ?? null,
+  })
 }
 
 export function createSupabaseAuthAdapter(): AuthAdapter {
@@ -88,11 +111,14 @@ export function createSupabaseAuthAdapter(): AuthAdapter {
         options: { emailRedirectTo: redirectTo },
       })
       if (error) throw error
+      // Session appears after the user opens the link; AuthContext calls
+      // ensureProfile on SIGNED_IN / initial session.
     },
 
     async signInWithPassword(email, password) {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
+      await ensureProfile()
     },
 
     async signOut() {

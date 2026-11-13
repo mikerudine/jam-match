@@ -3,9 +3,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
+import { ensureProfile } from '@/api/profile'
 import { supabaseConfigured } from '@/lib/config'
 import { createSupabaseAuthAdapter } from './supabaseAuth'
 import type { AuthAdapter, AuthSession } from './types'
@@ -26,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
   const [session, setSession] = useState<AuthSession | null>(null)
   const [loading, setLoading] = useState(Boolean(auth))
+  const ensuredForUser = useRef<string | null>(null)
 
   useEffect(() => {
     if (!auth) {
@@ -51,6 +54,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribe()
     }
   }, [auth])
+
+  // After every successful sign-in (incl. magic-link redirect / page reload),
+  // ensure jam.profiles exists. Idempotent; Telegram path also calls with
+  // explicit fields right after verifyOtp.
+  useEffect(() => {
+    if (!session?.user.id) {
+      ensuredForUser.current = null
+      return
+    }
+    if (ensuredForUser.current === session.user.id) return
+    ensuredForUser.current = session.user.id
+    ensureProfile().catch((err) => {
+      console.error('ensure_profile failed', err)
+      ensuredForUser.current = null
+    })
+  }, [session?.user.id])
 
   const value = useMemo(
     () => ({

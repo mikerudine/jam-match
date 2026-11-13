@@ -126,29 +126,50 @@ alter default privileges in schema jam
   grant all on tables to service_role;
 
 -- ---------------------------------------------------------------------------
--- Auto-create jam.profiles on signup (function in jam; trigger on auth.users)
+-- Ensure jam.profiles row for the current user (called from the app after
+-- sign-in). No triggers on auth.users — auth is shared across apps in this
+-- project; a failing jam trigger would break signups project-wide.
 -- ---------------------------------------------------------------------------
-create or replace function jam.handle_new_user()
-returns trigger
+create or replace function jam.ensure_profile(
+  p_display_name text default null
+)
+returns jam.profiles
 language plpgsql
 security definer
-set search_path = jam, auth, public
+set search_path = jam
 as $$
+declare
+  uid uuid := auth.uid();
+  meta jsonb := coalesce(auth.jwt() -> 'user_metadata', '{}'::jsonb);
+  display text;
+  result jam.profiles;
 begin
+  if uid is null then
+    raise exception 'not authenticated';
+  end if;
+
+  display := coalesce(
+    nullif(trim(p_display_name), ''),
+    nullif(trim(meta->>'display_name'), ''),
+    'musician'
+  );
+
   insert into jam.profiles (id, display_name)
-  values (
-    new.id,
-    coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1), 'musician')
-  )
-  on conflict (id) do nothing;
-  return new;
+  values (uid, display)
+  on conflict (id) do update
+    set
+      display_name = case
+        when nullif(trim(excluded.display_name), '') is not null
+          and excluded.display_name is distinct from 'musician'
+          then excluded.display_name
+        else jam.profiles.display_name
+      end,
+      updated_at = now()
+  returning * into result;
+
+  return result;
 end;
 $$;
-
-drop trigger if exists on_auth_user_created_jam on auth.users;
-create trigger on_auth_user_created_jam
-  after insert on auth.users
-  for each row execute function jam.handle_new_user();
 
 -- ---------------------------------------------------------------------------
 -- Internal helpers (SECURITY DEFINER; limited EXECUTE grants)
@@ -580,10 +601,11 @@ revoke all on function jam.role_scarcity(jam.instrument) from public, anon, auth
 revoke all on function jam.expire_pending_invites(uuid) from public, anon, authenticated;
 revoke all on function jam.offer_next_for_seat(uuid) from public, anon, authenticated;
 revoke all on function jam.maybe_confirm_jam(uuid) from public, anon, authenticated;
-revoke all on function jam.handle_new_user() from public, anon, authenticated;
-
 -- Needed by RLS policy expressions
 grant execute on function jam.is_jam_participant(uuid, uuid) to authenticated;
+
+revoke all on function jam.ensure_profile(text) from public, anon;
+grant execute on function jam.ensure_profile(text) to authenticated;
 
 grant execute on function jam.create_jam_request(
   jam.jam_format, text[], text, text, timestamptz, timestamptz, integer,

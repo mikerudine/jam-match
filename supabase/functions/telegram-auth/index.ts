@@ -1,7 +1,8 @@
 /**
  * telegram-auth — verify Telegram Login Widget / Mini App initData,
- * create-or-find a Supabase Auth user, upsert jam.profiles Telegram fields,
+ * create-or-find a Supabase Auth user (metadata carries Telegram fields),
  * return a hashed_token the SPA can verifyOtp into a real session.
+ * The SPA then calls jam.ensure_profile() — no auth.users triggers.
  *
  * Secrets (Dashboard / `supabase secrets set`, never in the repo):
  *   TELEGRAM_BOT_TOKEN
@@ -171,24 +172,8 @@ Deno.serve(async (req) => {
     })
   }
 
-  // Upsert Telegram fields on jam.profiles (trigger may have created a stub).
-  const { error: profileErr } = await jam.from('profiles').upsert(
-    {
-      id: userId,
-      display_name: displayNameFrom(tgUser),
-      telegram_id: tgUser.id,
-      telegram_handle: tgUser.username ?? null,
-      telegram_first_name: tgUser.first_name ?? null,
-      telegram_last_name: tgUser.last_name ?? null,
-      telegram_photo_url: tgUser.photo_url ?? null,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'id' },
-  )
-  if (profileErr) {
-    console.error('profile upsert failed', profileErr)
-    return json(500, { error: 'profile_upsert_failed' })
-  }
+  // Profile row is created by the SPA via jam.ensure_profile() after verifyOtp
+  // (no triggers on shared auth.users).
 
   // Issue a magic-link hashed_token the client can verifyOtp → real session.
   const { data: linkData, error: linkError } =
