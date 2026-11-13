@@ -4,6 +4,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
   useNavigate,
 } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/auth/AuthContext'
@@ -23,6 +24,7 @@ import { JamDetailPage } from '@/pages/JamDetailPage'
 import { NewJamPage } from '@/pages/NewJamPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { SignInPage } from '@/pages/SignInPage'
+import { SongListPreviewPage } from '@/pages/SongListPreviewPage'
 
 /** After Mini App auto-login (or existing session), open jam from start_param. */
 function StartParamRedirect() {
@@ -68,12 +70,23 @@ function ProtectedRoutes() {
   )
 }
 
+function AppRoutes() {
+  const location = useLocation()
+  if (
+    import.meta.env.DEV &&
+    location.pathname === '/dev/song-list-preview'
+  ) {
+    return <SongListPreviewPage />
+  }
+  return <ProtectedRoutes />
+}
+
 export default function App() {
   return (
     <LocaleProvider>
       <AuthProvider>
         <HashRouter>
-          <ProtectedRoutes />
+          <AppRoutes />
         </HashRouter>
       </AuthProvider>
     </LocaleProvider>

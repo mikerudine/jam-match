@@ -80,6 +80,23 @@ await page.getByRole('button', { name: /Створити й шукати|Create 
 await page.waitForTimeout(2000)
 await shot(page, '06-jam-detail')
 
+// Seed a few songs on the jam detail song list (participants only).
+const songTitle = page.getByPlaceholder(/Назва|Title/i)
+if (await songTitle.count()) {
+  await songTitle.fill('Seven Nation Army')
+  await page.getByPlaceholder(/Виконавець|Artist/i).fill('The White Stripes')
+  await page.getByRole('button', { name: /^Додати$|^Add$/i }).click()
+  await page.waitForTimeout(700)
+  await songTitle.fill('Wonderwall')
+  await page.getByPlaceholder(/Виконавець|Artist/i).fill('Oasis')
+  await page.getByRole('button', { name: /^Додати$|^Add$/i }).click()
+  await page.waitForTimeout(700)
+  const veto = page.getByRole('button', { name: /Проти|Downvote/i }).last()
+  if (await veto.count()) await veto.click()
+  await page.waitForTimeout(500)
+  await shot(page, '10-jam-song-list')
+}
+
 await page.getByRole('link', { name: /Джеми|Jams/i }).click()
 await page.waitForTimeout(800)
 await shot(page, '07-home-with-jam')
