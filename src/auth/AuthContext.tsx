@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { ensureProfile } from '@/api/profile'
 import { supabaseConfigured } from '@/lib/config'
+import { requestTelegramWriteAccessOnce } from '@/lib/telegramWriteAccess'
 import { createSupabaseAuthAdapter } from './supabaseAuth'
 import type { AuthAdapter, AuthSession } from './types'
 
@@ -65,10 +66,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     if (ensuredForUser.current === session.user.id) return
     ensuredForUser.current = session.user.id
-    ensureProfile().catch((err) => {
-      console.error('ensure_profile failed', err)
-      ensuredForUser.current = null
-    })
+    ensureProfile()
+      .then(() => {
+        // After a session exists, ask Telegram once for bot DM permission
+        // so join Accept/Decline notifications can reach the user.
+        if (window.Telegram?.WebApp?.initData) {
+          requestTelegramWriteAccessOnce()
+        }
+      })
+      .catch((err) => {
+        console.error('ensure_profile failed', err)
+        ensuredForUser.current = null
+      })
   }, [session?.user.id])
 
   const value = useMemo(

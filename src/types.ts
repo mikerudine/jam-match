@@ -62,6 +62,8 @@ export interface Profile {
   telegram_first_name: string | null
   telegram_last_name: string | null
   telegram_photo_url: string | null
+  /** Bot may message this user (Login Widget write / Mini App requestWriteAccess). */
+  telegram_write_access?: boolean
   instruments: Instrument[]
   genres: string[]
   level: Level
