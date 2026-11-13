@@ -7,8 +7,9 @@ Same packaging approach as *One Day in Kyiv / kyiv-slots* and *Intercom*: one st
 ## Stack
 
 - **Frontend:** Vite, React 19, TypeScript, Tailwind CSS 4, `react-router-dom` (HashRouter)
-- **Backend:** Supabase (Postgres + Auth magic-link + RLS)
-- **Matching:** Postgres RPCs (`process_jam_matching`, `respond_to_invite`, …) behind RLS
+- **Backend:** shared Supabase project **kyiv-air-raid-alerts** (`maqdxmetyzpyupivyecz`), dedicated Postgres schema **`jam`** (same multi-app pattern as schema `rebuild`)
+- **Matching:** RPCs in schema `jam` (`process_jam_matching`, `respond_to_invite`, …) behind RLS
+- **Client:** `createClient(..., { db: { schema: 'jam' } })` — URL/anon key only via `VITE_SUPABASE_*` env
 
 ## Features (MVP)
 
@@ -70,21 +71,20 @@ npm run preview
 
 ## Supabase env / secrets
 
+Target project: **kyiv-air-raid-alerts** (`maqdxmetyzpyupivyecz`). All app tables/RPCs are in schema **`jam`** — migrations never create objects in `public` / `rebuild`.
+
 | Variable | Where | Purpose |
 | --- | --- | --- |
-| `VITE_SUPABASE_URL` | `.env` / GitHub Actions secret | Project URL (baked in at **build** time) |
+| `VITE_SUPABASE_URL` | `.env` / GitHub Actions secret | Project URL (baked in at **build** time), e.g. `https://maqdxmetyzpyupivyecz.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | `.env` / GitHub Actions secret | Public anon key (RLS still applies) |
 
 Never put the **service_role** key in the frontend. The seed script reads it from `supabase status` locally only.
 
-### Apply migrations on a hosted project
+### Hosted project checklist (do this manually — agents do not apply live)
 
-```bash
-npx supabase link --project-ref <ref>
-npx supabase db push
-```
-
-Or paste SQL from `supabase/migrations/` in the Supabase SQL editor. Enable Email auth (magic link) and add your GitHub Pages URL to Auth → Redirect URLs.
+1. **Expose schema `jam`:** Dashboard → Project Settings → API → **Exposed schemas** → add `jam` (required for PostgREST / supabase-js).
+2. Apply SQL from `supabase/migrations/` (SQL editor or `supabase db push` after `supabase link --project-ref maqdxmetyzpyupivyecz`).
+3. Enable Email auth (magic link); add the GitHub Pages URL to Auth → Redirect URLs.
 
 ## Deploy (GitHub Pages)
 

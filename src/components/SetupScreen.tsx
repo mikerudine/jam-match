@@ -16,8 +16,9 @@ export function SetupScreen() {
           {t.setup.hint}
         </p>
         <pre className="mt-4 overflow-x-auto rounded-xl border border-line bg-ink px-3 py-3 text-xs text-mute">
-{`VITE_SUPABASE_URL=...
-VITE_SUPABASE_ANON_KEY=...`}
+{`VITE_SUPABASE_URL=https://maqdxmetyzpyupivyecz.supabase.co
+VITE_SUPABASE_ANON_KEY=...
+# schema jam must be in Exposed schemas`}
         </pre>
       </div>
       <div className="mt-6 flex gap-2">

@@ -119,9 +119,10 @@ async function main() {
   const { url, serviceKey } = loadLocalEnv()
   const admin = createClient(url, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
+    db: { schema: 'jam' },
   })
 
-  console.log('Seeding musicians into', url)
+  console.log('Seeding musicians into', url, '(schema jam)')
 
   for (let i = 0; i < NAMES.length; i++) {
     const [name, , primary] = NAMES[i]

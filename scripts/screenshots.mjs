@@ -79,7 +79,9 @@ await page.waitForTimeout(800)
 await shot(page, '07-home-with-jam')
 
 // Find invitee via service role
-const admin = createClient(url, env.SERVICE_ROLE_KEY)
+const admin = createClient(url, env.SERVICE_ROLE_KEY, {
+  db: { schema: 'jam' },
+})
 const { data: invite } = await admin
   .from('jam_invites')
   .select('invitee_id, profiles:invitee_id(display_name)')
