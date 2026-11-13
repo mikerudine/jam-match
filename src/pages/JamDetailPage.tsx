@@ -15,6 +15,7 @@ import {
   type JamSongList,
 } from '@/api/songs'
 import { useAuth } from '@/auth/AuthContext'
+import { EditJamSection } from '@/components/EditJamSection'
 import { Loading } from '@/components/Loading'
 import { SongListSection } from '@/components/SongListSection'
 import { useLocale } from '@/i18n/LocaleContext'
@@ -197,12 +198,19 @@ export function JamDetailPage() {
 
   const { jam, seats, members } = detail
   const isMember = members.some((m) => m.profile.id === session?.user.id)
+  const isInitiator = jam.creator_id === session?.user.id
   const canFeedback =
     isMember &&
     (jam.status === 'confirmed' || jam.status === 'completed') &&
     !feedbackDone &&
     new Date(jam.window_end).getTime() < Date.now()
   const canShare = Boolean(telegramBotUsername)
+
+  async function refreshDetail() {
+    if (!jamId) return
+    const d = await getJamDetail(jamId)
+    setDetail(d)
+  }
 
   return (
     <div className="space-y-5 pb-6">
@@ -249,6 +257,10 @@ export function JamDetailPage() {
           </button>
         </div>
       )}
+
+      {isInitiator ? (
+        <EditJamSection jam={jam} seats={seats} onUpdated={refreshDetail} />
+      ) : null}
 
       <section className="rounded-2xl border border-line bg-panel/90 p-4">
         <h2 className="text-sm text-mute">{t.home.seats}</h2>

@@ -108,6 +108,13 @@ const uk = {
     noAccessTitle: 'Немає доступу',
     noAccessBody:
       'Цей джем недоступний. Попросіть організатора запросити вас або надіслати інше посилання.',
+    edit: 'Редагувати',
+    editTitle: 'Редагувати джем',
+    save: 'Зберегти й оновити матчинг',
+    cannotRemoveFilled: 'Не можна прибрати місце з підтвердженим учасником',
+    seatFilled: 'зайнято',
+    newSeat: 'нове',
+    restoreSeat: 'Повернути',
   },
   songs: {
     title: 'Список пісень',
@@ -162,6 +169,7 @@ const uk = {
     language: 'Мова',
     me: 'я',
     back: 'Назад',
+    cancel: 'Скасувати',
   },
 }
 
@@ -271,6 +279,13 @@ const en = {
     noAccessTitle: 'No access',
     noAccessBody:
       'You cannot open this jam. Ask the organiser to invite you or share another link.',
+    edit: 'Edit',
+    editTitle: 'Edit jam',
+    save: 'Save & rematch',
+    cannotRemoveFilled: 'Cannot remove a seat with an accepted participant',
+    seatFilled: 'filled',
+    newSeat: 'new',
+    restoreSeat: 'Restore',
   },
   songs: {
     title: 'Song list',
@@ -325,6 +340,7 @@ const en = {
     language: 'Language',
     me: 'me',
     back: 'Back',
+    cancel: 'Cancel',
   },
 }
 

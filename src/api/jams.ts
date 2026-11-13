@@ -37,6 +37,37 @@ export async function createJam(input: CreateJamInput): Promise<string> {
   return data as string
 }
 
+export interface UpdateJamInput {
+  jam_id: string
+  format: JamFormat
+  genres: string[]
+  area: string
+  base_name?: string
+  window_start: string
+  window_end: string
+  invite_ttl_hours: number
+  creator_role: Instrument
+  keep_seat_ids: string[]
+  add_roles: Instrument[]
+}
+
+export async function updateJam(input: UpdateJamInput): Promise<void> {
+  const { error } = await getSupabase().rpc('update_jam_request', {
+    p_jam_id: input.jam_id,
+    p_format: input.format,
+    p_genres: input.genres,
+    p_area: input.area,
+    p_base_name: input.base_name ?? null,
+    p_window_start: input.window_start,
+    p_window_end: input.window_end,
+    p_invite_ttl_hours: input.invite_ttl_hours,
+    p_creator_role: input.creator_role,
+    p_keep_seat_ids: input.keep_seat_ids,
+    p_add_roles: input.add_roles,
+  })
+  if (error) throw error
+}
+
 export async function runMatching(jamId?: string): Promise<number> {
   const { data, error } = await getSupabase().rpc('process_jam_matching', {
     p_jam_id: jamId ?? null,

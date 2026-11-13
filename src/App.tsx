@@ -18,6 +18,7 @@ import {
   takePendingJamFromStartParam,
 } from '@/lib/telegramDeepLink'
 import { AvailabilityPage } from '@/pages/AvailabilityPage'
+import { EditJamPreviewPage } from '@/pages/EditJamPreviewPage'
 import { HomePage } from '@/pages/HomePage'
 import { InboxPage } from '@/pages/InboxPage'
 import { JamDetailPage } from '@/pages/JamDetailPage'
@@ -72,11 +73,11 @@ function ProtectedRoutes() {
 
 function AppRoutes() {
   const location = useLocation()
-  if (
-    import.meta.env.DEV &&
-    location.pathname === '/dev/song-list-preview'
-  ) {
+  if (import.meta.env.DEV && location.pathname === '/dev/song-list-preview') {
     return <SongListPreviewPage />
+  }
+  if (import.meta.env.DEV && location.pathname === '/dev/edit-jam-preview') {
+    return <EditJamPreviewPage />
   }
   return <ProtectedRoutes />
 }
