@@ -28,7 +28,7 @@ export function ProfilePage() {
   const [instruments, setInstruments] = useState<string[]>([])
   const [genres, setGenres] = useState<string[]>([])
   const [level, setLevel] = useState<Level>('intermediate')
-  const [areas, setAreas] = useState<string[]>(['Podil'])
+  const [areas, setAreas] = useState<string[]>([])
   const [demoUrl, setDemoUrl] = useState('')
   const [reliability, setReliability] = useState({ score: 1, count: 0 })
 
