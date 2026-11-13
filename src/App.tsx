@@ -25,6 +25,7 @@ import { InboxPage } from '@/pages/InboxPage'
 import { JamDetailPage } from '@/pages/JamDetailPage'
 import { NewJamPage } from '@/pages/NewJamPage'
 import { ProfilePage } from '@/pages/ProfilePage'
+import { PublicJamPreviewPage } from '@/pages/PublicJamPreviewPage'
 import { SignInPage } from '@/pages/SignInPage'
 import { SongListPreviewPage } from '@/pages/SongListPreviewPage'
 
@@ -82,6 +83,9 @@ function AppRoutes() {
   }
   if (import.meta.env.DEV && location.pathname === '/dev/join-request-preview') {
     return <JoinRequestPreviewPage />
+  }
+  if (import.meta.env.DEV && location.pathname === '/dev/public-jam-preview') {
+    return <PublicJamPreviewPage />
   }
   return <ProtectedRoutes />
 }

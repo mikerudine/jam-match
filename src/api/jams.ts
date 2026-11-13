@@ -8,6 +8,7 @@ import type {
   JamRequest,
   JamSeat,
   Profile,
+  PublicJam,
 } from '@/types'
 
 export interface CreateJamInput {
@@ -335,4 +336,13 @@ export async function getMyJoinRequest(
     .maybeSingle()
   if (error) throw error
   return (data as JamJoinRequest | null) ?? null
+}
+
+export async function getPublicJam(jamId: string): Promise<PublicJam | null> {
+  const { data, error } = await getSupabase().rpc('get_public_jam', {
+    p_jam_id: jamId,
+  })
+  if (error) throw error
+  if (!data) return null
+  return data as PublicJam
 }

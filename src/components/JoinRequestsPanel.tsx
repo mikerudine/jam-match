@@ -4,7 +4,12 @@ import {
   respondToJoinRequest,
 } from '@/api/jams'
 import { useLocale } from '@/i18n/LocaleContext'
-import type { JamJoinRequest, JamRequest, Profile } from '@/types'
+import {
+  isJamOpenForJoin,
+  type JamJoinRequest,
+  type JamRequest,
+  type Profile,
+} from '@/types'
 
 type JoinRow = JamJoinRequest & {
   requester: Pick<
@@ -34,8 +39,7 @@ export function JoinRequestsPanel({
   listFn,
 }: JoinRequestsPanelProps) {
   const { t } = useLocale()
-  const open =
-    jam.status === 'matching' && new Date(jam.window_end).getTime() > Date.now()
+  const open = isJamOpenForJoin(jam.status, jam.window_end)
 
   const [rows, setRows] = useState<JoinRow[]>(initialRows ?? [])
   const [loading, setLoading] = useState(!initialRows)

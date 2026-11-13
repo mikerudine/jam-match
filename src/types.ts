@@ -119,6 +119,37 @@ export interface JamJoinRequest {
   responded_at: string | null
 }
 
+/** Safe preview for non-participants (no base_name / contacts / member ids). */
+export interface PublicJamSeat {
+  role: Instrument
+  role_label: string | null
+  is_creator: boolean
+  filled: boolean
+}
+
+export interface PublicJam {
+  id: string
+  format: JamFormat
+  genres: string[]
+  area: string
+  window_start: string
+  window_end: string
+  status: JamStatus
+  initiator_display_name: string
+  seats: PublicJamSeat[]
+  filled_count: number
+  open_count: number
+}
+
+/** Matching or confirmed, and not past — open for join requests. */
+export function isJamOpenForJoin(
+  status: JamStatus,
+  windowEnd: string | Date,
+): boolean {
+  if (status !== 'matching' && status !== 'confirmed') return false
+  return new Date(windowEnd).getTime() > Date.now()
+}
+
 export interface JamInvite {
   id: string
   jam_id: string

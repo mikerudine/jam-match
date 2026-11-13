@@ -1,10 +1,16 @@
 import { useState, type FormEvent } from 'react'
 import { requestToJoin } from '@/api/jams'
 import { useLocale } from '@/i18n/LocaleContext'
-import { INSTRUMENTS, type JamJoinRequest, type JamRequest } from '@/types'
+import {
+  INSTRUMENTS,
+  isJamOpenForJoin,
+  type JamJoinRequest,
+  type JamRequest,
+} from '@/types'
 
 export interface JoinRequestFormProps {
-  jam: JamRequest
+  /** Full jam or public preview — only id/status/window_end are required. */
+  jam: Pick<JamRequest, 'id' | 'status' | 'window_end'>
   existing: JamJoinRequest | null
   onSubmitted: () => void | Promise<void>
   /** Override RPC (preview / tests). */
@@ -23,8 +29,7 @@ export function JoinRequestForm({
   submitFn,
 }: JoinRequestFormProps) {
   const { t } = useLocale()
-  const open =
-    jam.status === 'matching' && new Date(jam.window_end).getTime() > Date.now()
+  const open = isJamOpenForJoin(jam.status, jam.window_end)
 
   const [role, setRole] = useState('')
   const [custom, setCustom] = useState(false)

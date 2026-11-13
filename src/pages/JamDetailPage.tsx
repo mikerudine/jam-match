@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import {
   getJamDetail,
   getMyJoinRequest,
+  getPublicJam,
   hasSubmittedFeedback,
   runMatching,
   submitFeedback,
@@ -20,6 +21,7 @@ import { EditJamSection } from '@/components/EditJamSection'
 import { JoinRequestForm } from '@/components/JoinRequestForm'
 import { JoinRequestsPanel } from '@/components/JoinRequestsPanel'
 import { Loading } from '@/components/Loading'
+import { PublicJamView } from '@/components/PublicJamView'
 import { SongListSection } from '@/components/SongListSection'
 import { useLocale } from '@/i18n/LocaleContext'
 import { telegramAppName, telegramBotUsername } from '@/lib/config'
@@ -27,7 +29,11 @@ import type { VoteValue } from '@/lib/songList'
 import { buildJamTelegramLink } from '@/lib/telegramDeepLink'
 import { copyTextToClipboard, shareJamLink } from '@/lib/telegramShare'
 import { seatRoleLabel } from '@/lib/utils'
-import type { JamJoinRequest } from '@/types'
+import {
+  isJamOpenForJoin,
+  type JamJoinRequest,
+  type PublicJam,
+} from '@/types'
 
 function isNoAccessError(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false
@@ -62,10 +68,21 @@ export function JamDetailPage() {
   const [songsBusy, setSongsBusy] = useState(false)
   const [myJoin, setMyJoin] = useState<JamJoinRequest | null>(null)
   const [joinRefresh, setJoinRefresh] = useState(0)
+  const [publicJam, setPublicJam] = useState<PublicJam | null>(null)
 
   async function refreshSongs(id: string, userId: string) {
     const list = await listJamSongs(id, userId)
     setSongList(list)
+  }
+
+  async function loadPublicPreview(id: string, userId: string) {
+    const pub = await getPublicJam(id)
+    const join = await getMyJoinRequest(id, userId)
+    setPublicJam(pub)
+    setMyJoin(join)
+    setDetail(null)
+    setSongList(null)
+    setNoAccess(!pub)
   }
 
   useEffect(() => {
@@ -73,7 +90,7 @@ export function JamDetailPage() {
     let cancelled = false
     ;(async () => {
       try {
-        await runMatching(jamId)
+        await runMatching(jamId).catch(() => 0)
         const d = await getJamDetail(jamId)
         const done = await hasSubmittedFeedback(jamId, session.user.id)
         let songs: JamSongList | null = null
@@ -89,6 +106,7 @@ export function JamDetailPage() {
             : await getMyJoinRequest(jamId, session.user.id)
         if (!cancelled) {
           setDetail(d)
+          setPublicJam(null)
           setFeedbackDone(done)
           setSongList(songs)
           setMyJoin(join)
@@ -97,9 +115,14 @@ export function JamDetailPage() {
       } catch (err) {
         if (!cancelled) {
           if (isNoAccessError(err)) {
-            setNoAccess(true)
             setError(null)
-            setSongList(null)
+            try {
+              await loadPublicPreview(jamId, session.user.id)
+            } catch {
+              setNoAccess(true)
+              setPublicJam(null)
+              setSongList(null)
+            }
           } else {
             setError(err instanceof Error ? err.message : t.common.error)
           }
@@ -189,7 +212,56 @@ export function JamDetailPage() {
     }
   }
 
+  async function refreshDetail() {
+    if (!jamId || !session) return
+    try {
+      const d = await getJamDetail(jamId)
+      setDetail(d)
+      setPublicJam(null)
+      setNoAccess(false)
+      if (d.jam.creator_id !== session.user.id) {
+        setMyJoin(await getMyJoinRequest(jamId, session.user.id))
+      } else {
+        setMyJoin(null)
+      }
+      try {
+        await refreshSongs(jamId, session.user.id)
+      } catch {
+        setSongList(null)
+      }
+    } catch (err) {
+      if (isNoAccessError(err)) {
+        await loadPublicPreview(jamId, session.user.id)
+      } else {
+        throw err
+      }
+    }
+    setJoinRefresh((n) => n + 1)
+  }
+
   if (loading) return <Loading />
+
+  if (!detail && publicJam && session) {
+    return (
+      <div className="space-y-5 pb-6">
+        <Link to="/" className="text-sm text-mute">
+          ← {t.common.back}
+        </Link>
+        <PublicJamView jam={publicJam} />
+        <JoinRequestForm
+          jam={{
+            id: publicJam.id,
+            status: publicJam.status,
+            window_end: publicJam.window_end,
+          }}
+          existing={myJoin}
+          onSubmitted={refreshDetail}
+        />
+        {error && <p className="text-sm text-danger">{error}</p>}
+      </div>
+    )
+  }
+
   if (!detail) {
     return (
       <div>
@@ -220,18 +292,7 @@ export function JamDetailPage() {
   const canRequestJoin =
     !isInitiator &&
     !isMember &&
-    jam.status === 'matching' &&
-    new Date(jam.window_end).getTime() > Date.now()
-
-  async function refreshDetail() {
-    if (!jamId || !session) return
-    const d = await getJamDetail(jamId)
-    setDetail(d)
-    if (d.jam.creator_id !== session.user.id) {
-      setMyJoin(await getMyJoinRequest(jamId, session.user.id))
-    }
-    setJoinRefresh((n) => n + 1)
-  }
+    isJamOpenForJoin(jam.status, jam.window_end)
 
   return (
     <div className="space-y-5 pb-6">
