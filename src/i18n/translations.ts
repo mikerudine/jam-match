@@ -129,6 +129,11 @@ const uk = {
     joinAccept: 'Прийняти',
     joinDecline: 'Відхилити',
     joinFrom: 'від',
+    organizedBy: 'Організатор',
+    organizer: 'організатор',
+    publicPreviewHint:
+      'Публічний перегляд: точна адреса й контакти зʼявляться після прийняття.',
+    seatCounts: 'Зайнято {filled} · вільно {open}',
   },
   songs: {
     title: 'Список пісень',
@@ -314,6 +319,11 @@ const en = {
     joinAccept: 'Accept',
     joinDecline: 'Decline',
     joinFrom: 'from',
+    organizedBy: 'Organizer',
+    organizer: 'organizer',
+    publicPreviewHint:
+      'Public preview: exact place and contacts appear after you are accepted.',
+    seatCounts: 'Filled {filled} · open {open}',
   },
   songs: {
     title: 'Song list',
