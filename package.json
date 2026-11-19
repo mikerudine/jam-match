@@ -16,7 +16,7 @@
     "screenshots:edit-jam": "node scripts/edit-jam-preview.mjs",
     "screenshots:join-request": "node scripts/join-request-preview.mjs",
     "screenshots:public-jam": "node scripts/public-jam-preview.mjs",
-    "test": "node --experimental-strip-types --test supabase/functions/telegram-auth/telegram_crypto.test.ts src/auth/telegramWidgetAuth.test.ts src/lib/telegramDeepLink.test.ts src/lib/songList.test.ts"
+    "test": "node --experimental-strip-types --test supabase/functions/telegram-auth/telegram_crypto.test.ts supabase/functions/_shared/join_notify.test.ts src/auth/telegramWidgetAuth.test.ts src/lib/telegramDeepLink.test.ts src/lib/songList.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

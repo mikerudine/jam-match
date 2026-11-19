@@ -23,6 +23,9 @@ interface TelegramWebApp {
   ready: () => void
   expand: () => void
   openTelegramLink?: (url: string) => void
+  /** Bot API 6.9+ — ask the user to allow the bot to message them. */
+  requestWriteAccess?: (callback?: (granted: boolean) => void) => void
+  isVersionAtLeast?: (version: string) => boolean
   colorScheme?: 'light' | 'dark'
 }
 

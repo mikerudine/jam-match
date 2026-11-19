@@ -1,3 +1,4 @@
+import { notifyJoinRequest } from '@/api/notify'
 import { getSupabase } from '@/lib/supabase'
 import type {
   ConfirmedMember,
@@ -273,7 +274,10 @@ export async function requestToJoin(input: {
     p_note: input.note ?? null,
   })
   if (error) throw error
-  return data as string
+  const requestId = data as string
+  // Soft-fail Telegram ping to the jam organizer (Accept / Decline buttons).
+  void notifyJoinRequest(requestId)
+  return requestId
 }
 
 export async function respondToJoinRequest(
@@ -285,6 +289,8 @@ export async function respondToJoinRequest(
     p_accept: accept,
   })
   if (error) throw error
+  // Soft-fail Telegram ping to the requester about the decision.
+  void notifyJoinRequest(requestId)
 }
 
 export async function listJoinRequestsForJam(
