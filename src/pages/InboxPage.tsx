@@ -70,7 +70,10 @@ export function InboxPage() {
                 {item.creator ? ` · ${item.creator.display_name}` : ''}
               </p>
               <p className="mt-1 text-xs text-mute">
-                {new Date(item.jam.window_start).toLocaleString()} · {item.jam.area}
+                {item.jam.window_start
+                  ? new Date(item.jam.window_start).toLocaleString()
+                  : t.home.noDate}
+                {item.jam.area ? ` · ${item.jam.area}` : ''}
                 {item.jam.base_name ? ` · ${item.jam.base_name}` : ''}
               </p>
               <p className="mt-1 text-xs text-amber">

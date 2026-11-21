@@ -13,12 +13,13 @@ import type {
 } from '@/types'
 
 export interface CreateJamInput {
+  theme: string
   format: JamFormat
   genres: string[]
-  area: string
+  area?: string | null
   base_name?: string
-  window_start: string
-  window_end: string
+  window_start?: string | null
+  window_end?: string | null
   invite_ttl_hours: number
   creator_role: Instrument
   wanted_roles: Instrument[]
@@ -28,13 +29,14 @@ export async function createJam(input: CreateJamInput): Promise<string> {
   const { data, error } = await getSupabase().rpc('create_jam_request', {
     p_format: input.format,
     p_genres: input.genres,
-    p_area: input.area,
+    p_area: input.area ?? null,
     p_base_name: input.base_name ?? null,
-    p_window_start: input.window_start,
-    p_window_end: input.window_end,
+    p_window_start: input.window_start ?? null,
+    p_window_end: input.window_end ?? null,
     p_invite_ttl_hours: input.invite_ttl_hours,
     p_creator_role: input.creator_role,
     p_wanted_roles: input.wanted_roles,
+    p_theme: input.theme,
   })
   if (error) throw error
   return data as string

@@ -49,10 +49,10 @@ export const AREA_OPTIONS = [
   'Other Kyiv',
 ] as const
 
-/** Weekly grid: Mon=0 … Sun=6, hours 10–22 inclusive. */
+/** Weekly grid: Mon=0 … Sun=6, hours 00–23 inclusive (full day). */
 export const AVAIL_DAYS = 7
-export const AVAIL_HOUR_START = 10
-export const AVAIL_HOUR_END = 22
+export const AVAIL_HOUR_START = 0
+export const AVAIL_HOUR_END = 23
 
 export interface Profile {
   id: string
@@ -86,12 +86,15 @@ export interface AvailabilitySlot {
 export interface JamRequest {
   id: string
   creator_id: string
+  /** Free-text idea / title — enough to create a jam. */
+  theme: string | null
   format: JamFormat
   genres: string[]
-  area: string
+  area: string | null
   base_name: string | null
-  window_start: string
-  window_end: string
+  /** Optional until the organizer picks a slot. */
+  window_start: string | null
+  window_end: string | null
   status: JamStatus
   invite_ttl_hours: number
   created_at: string
@@ -133,9 +136,9 @@ export interface PublicJam {
   id: string
   format: JamFormat
   genres: string[]
-  area: string
-  window_start: string
-  window_end: string
+  area: string | null
+  window_start: string | null
+  window_end: string | null
   status: JamStatus
   initiator_display_name: string
   seats: PublicJamSeat[]
@@ -146,10 +149,31 @@ export interface PublicJam {
 /** Matching or confirmed, and not past — open for join requests. */
 export function isJamOpenForJoin(
   status: JamStatus,
-  windowEnd: string | Date,
+  windowEnd: string | Date | null | undefined,
 ): boolean {
   if (status !== 'matching' && status !== 'confirmed') return false
+  if (!windowEnd) return true
   return new Date(windowEnd).getTime() > Date.now()
+}
+
+/** Past by date, or finished/cancelled — belongs in profile archive. */
+export function isJamArchived(
+  jam: Pick<JamRequest, 'status' | 'window_end'>,
+): boolean {
+  if (jam.status === 'completed' || jam.status === 'cancelled') return true
+  if (jam.window_end && new Date(jam.window_end).getTime() < Date.now()) {
+    return true
+  }
+  return false
+}
+
+export function jamDisplayTitle(
+  jam: Pick<JamRequest, 'theme' | 'format'>,
+  formats: Record<JamFormat, string>,
+): string {
+  const theme = jam.theme?.trim()
+  if (theme) return theme
+  return formats[jam.format]
 }
 
 export interface JamInvite {

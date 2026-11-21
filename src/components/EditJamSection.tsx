@@ -13,7 +13,8 @@ import {
   type JamSeat,
 } from '@/types'
 
-function toLocalDate(iso: string) {
+function toLocalDate(iso: string | null) {
+  if (!iso) return ''
   const d = new Date(iso)
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -21,7 +22,8 @@ function toLocalDate(iso: string) {
   return `${y}-${m}-${day}`
 }
 
-function toLocalTime(iso: string) {
+function toLocalTime(iso: string | null) {
+  if (!iso) return '19:00'
   const d = new Date(iso)
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
@@ -43,7 +45,8 @@ export function EditJamSection({
 }: EditJamSectionProps) {
   const { t } = useLocale()
   const canEdit =
-    jam.status === 'matching' && new Date(jam.window_end).getTime() > Date.now()
+    jam.status === 'matching' &&
+    (!jam.window_end || new Date(jam.window_end).getTime() > Date.now())
 
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -70,7 +73,7 @@ export function EditJamSection({
   const [date, setDate] = useState(toLocalDate(jam.window_start))
   const [start, setStart] = useState(toLocalTime(jam.window_start))
   const [end, setEnd] = useState(toLocalTime(jam.window_end))
-  const [area, setArea] = useState(jam.area)
+  const [area, setArea] = useState(jam.area ?? '')
   const [baseName, setBaseName] = useState(jam.base_name ?? '')
   const [ttl, setTtl] = useState(jam.invite_ttl_hours)
 
@@ -85,7 +88,7 @@ export function EditJamSection({
     setDate(toLocalDate(jam.window_start))
     setStart(toLocalTime(jam.window_start))
     setEnd(toLocalTime(jam.window_end))
-    setArea(jam.area)
+    setArea(jam.area ?? '')
     setBaseName(jam.base_name ?? '')
     setTtl(jam.invite_ttl_hours)
     setError(null)
@@ -335,7 +338,7 @@ export function EditJamSection({
           multiple={false}
           options={AREA_OPTIONS.map((a) => ({ value: a, label: a }))}
           value={[area]}
-          onChange={(v) => setArea(v[0] || jam.area)}
+          onChange={(v) => setArea(v[0] || jam.area || '')}
         />
       </section>
 

@@ -14,6 +14,7 @@ const OTHER = 'user-other'
 const initialJam: JamRequest = {
   id: 'jam-edit-preview',
   creator_id: CREATOR,
+  theme: 'Indie night',
   format: 'free_jam',
   genres: ['rock', 'indie'],
   area: 'Podil',
@@ -138,8 +139,8 @@ function PreviewInner() {
       <div>
         <h1 className="font-display text-2xl">{t.formats[jam.format]}</h1>
         <p className="mt-2 text-sm text-mute">
-          {t.jam.time}: {new Date(jam.window_start).toLocaleString()} –{' '}
-          {new Date(jam.window_end).toLocaleTimeString([], {
+          {t.jam.time}: {new Date(jam.window_start!).toLocaleString()} –{' '}
+          {new Date(jam.window_end!).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
           })}

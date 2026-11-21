@@ -15,6 +15,7 @@ const REQUESTER = 'user-req'
 const jam: JamRequest = {
   id: 'jam-join-preview',
   creator_id: CREATOR,
+  theme: 'Podil jam',
   format: 'free_jam',
   genres: ['rock'],
   area: 'Podil',

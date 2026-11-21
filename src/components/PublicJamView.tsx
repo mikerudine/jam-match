@@ -23,14 +23,18 @@ export function PublicJamView({ jam }: PublicJamViewProps) {
         </p>
         <h1 className="font-display mt-1 text-2xl">{t.formats[jam.format]}</h1>
         <p className="mt-2 text-sm text-mute">
-          {t.jam.time}: {new Date(jam.window_start).toLocaleString()} –{' '}
-          {new Date(jam.window_end).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          {t.jam.time}:{' '}
+          {jam.window_start && jam.window_end
+            ? `${new Date(jam.window_start).toLocaleString()} – ${new Date(
+                jam.window_end,
+              ).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}`
+            : '—'}
         </p>
         <p className="text-sm text-mute">
-          {t.jam.area}: {jam.area}
+          {t.jam.area}: {jam.area || '—'}
         </p>
         {jam.initiator_display_name ? (
           <p className="text-sm text-mute">
