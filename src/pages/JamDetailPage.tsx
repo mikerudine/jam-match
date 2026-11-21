@@ -287,7 +287,8 @@ export function JamDetailPage() {
     isMember &&
     (jam.status === 'confirmed' || jam.status === 'completed') &&
     !feedbackDone &&
-    new Date(jam.window_end).getTime() < Date.now()
+    Boolean(jam.window_end) &&
+    new Date(jam.window_end!).getTime() < Date.now()
   const canShare = Boolean(telegramBotUsername)
   const canRequestJoin =
     !isInitiator &&
@@ -306,16 +307,22 @@ export function JamDetailPage() {
             ? t.jam.confirmedTitle
             : t.formats[jam.format]}
         </p>
-        <h1 className="font-display mt-1 text-2xl">{t.formats[jam.format]}</h1>
+        <h1 className="font-display mt-1 text-2xl">
+          {jam.theme?.trim() || t.formats[jam.format]}
+        </h1>
         <p className="mt-2 text-sm text-mute">
-          {t.jam.time}: {new Date(jam.window_start).toLocaleString()} –{' '}
-          {new Date(jam.window_end).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          {t.jam.time}:{' '}
+          {jam.window_start && jam.window_end
+            ? `${new Date(jam.window_start).toLocaleString()} – ${new Date(
+                jam.window_end,
+              ).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}`
+            : t.home.noDate}
         </p>
         <p className="text-sm text-mute">
-          {t.jam.place}: {jam.area}
+          {t.jam.place}: {jam.area || '—'}
           {jam.base_name ? ` · ${jam.base_name}` : ''}
         </p>
       </div>

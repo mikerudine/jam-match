@@ -1,11 +1,17 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listMyJams, runMatching } from '@/api/jams'
 import { fetchProfile } from '@/api/profile'
 import { useAuth } from '@/auth/AuthContext'
 import { Loading } from '@/components/Loading'
 import { useLocale } from '@/i18n/LocaleContext'
-import type { JamRequest, JamSeat, Profile } from '@/types'
+import {
+  isJamArchived,
+  jamDisplayTitle,
+  type JamRequest,
+  type JamSeat,
+  type Profile,
+} from '@/types'
 
 type JamRow = JamRequest & { seats: JamSeat[] }
 
@@ -42,6 +48,11 @@ export function HomePage() {
       cancelled = true
     }
   }, [reload, t.common.error])
+
+  const openJams = useMemo(
+    () => jams.filter((j) => !isJamArchived(j)),
+    [jams],
+  )
 
   async function refreshMatching() {
     setMatching(true)
@@ -95,13 +106,13 @@ export function HomePage() {
         {t.home.runMatch}
       </button>
 
-      {jams.length === 0 ? (
+      {openJams.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-mute">
           {t.home.empty}
         </p>
       ) : (
         <ul className="space-y-3">
-          {jams.map((jam) => {
+          {openJams.map((jam) => {
             const open = jam.seats.filter((s) => s.status !== 'filled').length
             return (
               <li key={jam.id}>
@@ -112,10 +123,13 @@ export function HomePage() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="font-medium text-cream">
-                        {t.formats[jam.format]}
+                        {jamDisplayTitle(jam, t.formats)}
                       </p>
                       <p className="mt-1 text-xs text-mute">
-                        {new Date(jam.window_start).toLocaleString()} · {jam.area}
+                        {jam.window_start
+                          ? new Date(jam.window_start).toLocaleString()
+                          : t.home.noDate}
+                        {jam.area ? ` · ${jam.area}` : ''}
                       </p>
                     </div>
                     <span
@@ -138,7 +152,7 @@ export function HomePage() {
                           ? s.role_label.trim()
                           : t.instruments[s.role],
                       )
-                      .join(' · ')}
+                      .join(' · ') || t.home.lineupOpen}
                     {open > 0 && (
                       <span className="text-amber">
                         {' '}
@@ -152,6 +166,11 @@ export function HomePage() {
           })}
         </ul>
       )}
+
+      <Link to="/profile" className="block text-center text-sm text-mute hover:text-cream">
+        {t.home.archiveHint}
+      </Link>
+
       {error && <p className="text-sm text-danger">{error}</p>}
     </div>
   )

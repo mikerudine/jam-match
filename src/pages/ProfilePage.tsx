@@ -1,4 +1,6 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { listMyJams } from '@/api/jams'
 import { upsertProfile, fetchProfile } from '@/api/profile'
 import { useAuth } from '@/auth/AuthContext'
 import { ChipSelect } from '@/components/ChipSelect'
@@ -9,7 +11,11 @@ import {
   GENRE_OPTIONS,
   INSTRUMENTS,
   LEVELS,
+  isJamArchived,
+  jamDisplayTitle,
   type Instrument,
+  type JamRequest,
+  type JamSeat,
   type Level,
   type Profile,
 } from '@/types'
@@ -31,14 +37,22 @@ export function ProfilePage() {
   const [areas, setAreas] = useState<string[]>([])
   const [demoUrl, setDemoUrl] = useState('')
   const [reliability, setReliability] = useState({ score: 1, count: 0 })
+  const [archiveJams, setArchiveJams] = useState<
+    Array<JamRequest & { seats: JamSeat[] }>
+  >([])
+  const [archiveOpen, setArchiveOpen] = useState(false)
 
   useEffect(() => {
     if (!session) return
     let cancelled = false
-    fetchProfile(session.user.id)
-      .then((p) => {
-        if (cancelled || !p) return
-        applyProfile(p)
+    Promise.all([
+      fetchProfile(session.user.id),
+      listMyJams(session.user.id),
+    ])
+      .then(([p, jams]) => {
+        if (cancelled) return
+        if (p) applyProfile(p)
+        setArchiveJams(jams.filter((j) => isJamArchived(j)))
       })
       .catch((err) => setError(err instanceof Error ? err.message : t.common.error))
       .finally(() => {
@@ -48,6 +62,16 @@ export function ProfilePage() {
       cancelled = true
     }
   }, [session, t.common.error])
+
+  const archiveSorted = useMemo(
+    () =>
+      [...archiveJams].sort((a, b) => {
+        const ae = a.window_end ?? a.created_at
+        const be = b.window_end ?? b.created_at
+        return be.localeCompare(ae)
+      }),
+    [archiveJams],
+  )
 
   function applyProfile(p: Profile) {
     setDisplayName(p.display_name)
@@ -202,6 +226,46 @@ export function ProfilePage() {
       </button>
       {saved && <p className="text-sm text-teal">{t.profile.saved}</p>}
       {error && <p className="text-sm text-danger">{error}</p>}
+
+      {archiveSorted.length > 0 && (
+        <section className="rounded-2xl border border-line bg-panel/60 p-3">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-2 text-left"
+            aria-expanded={archiveOpen}
+            onClick={() => setArchiveOpen((v) => !v)}
+          >
+            <div>
+              <h2 className="font-display text-lg text-cream">
+                {t.profile.archive}
+              </h2>
+              <p className="text-xs text-mute">
+                {t.profile.archiveHint} · {archiveSorted.length}
+              </p>
+            </div>
+            <span className="text-mute">{archiveOpen ? '▴' : '▾'}</span>
+          </button>
+          {archiveOpen && (
+            <ul className="mt-3 divide-y divide-line border-t border-line">
+              {archiveSorted.map((jam) => (
+                <li key={jam.id} className="py-3">
+                  <Link to={`/jams/${jam.id}`} className="block hover:text-amber">
+                    <p className="font-medium text-cream">
+                      {jamDisplayTitle(jam, t.formats)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-mute">
+                      {jam.window_start
+                        ? new Date(jam.window_start).toLocaleString()
+                        : t.home.noDate}
+                      {jam.area ? ` · ${jam.area}` : ''}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <style>{`
         .field {

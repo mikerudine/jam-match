@@ -76,20 +76,25 @@ export function AvailabilityPage() {
         <p className="mt-1 text-sm text-mute">{t.availability.hint}</p>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-line bg-panel/70 p-2">
+      <div className="w-full min-w-0 rounded-2xl border border-line bg-panel/70 p-2">
         <div
-          className="grid min-w-[520px] gap-1"
-          style={{ gridTemplateColumns: `2.5rem repeat(7, minmax(0, 1fr))` }}
+          className="grid w-full gap-0.5"
+          style={{
+            gridTemplateColumns: `1.75rem repeat(7, minmax(0, 1fr))`,
+          }}
         >
           <div />
           {t.days.map((d) => (
-            <div key={d} className="py-1 text-center text-xs font-medium text-mute">
+            <div
+              key={d}
+              className="py-1 text-center text-[10px] font-medium text-mute sm:text-xs"
+            >
               {d}
             </div>
           ))}
           {hours.map((hour) => (
             <div key={hour} className="contents">
-              <div className="flex items-center justify-end pr-1 text-[10px] text-mute">
+              <div className="flex items-center justify-end pr-0.5 text-[9px] text-mute sm:text-[10px]">
                 {String(hour).padStart(2, '0')}
               </div>
               {t.days.map((_, day) => {
@@ -101,7 +106,7 @@ export function AvailabilityPage() {
                     aria-pressed={on}
                     onClick={() => toggle(day, hour)}
                     className={cn(
-                      'h-8 rounded-md text-[10px] transition active:scale-95',
+                      'h-6 rounded-[3px] text-[10px] transition active:scale-95 sm:h-7 sm:rounded-md',
                       on ? 'slot-on' : 'slot-off',
                     )}
                   />
