@@ -71,14 +71,22 @@ export function applyWeekOverridesToSlots(
   return next
 }
 
-/** Toggle date override: clear existing, else off if weekly has hours, else full. */
+/**
+ * Calendar day tap cycle:
+ * empty → yellow (`full` = whole day free);
+ * yellow → red (`off` = definitely can't);
+ * red → empty.
+ * Days already lit by the weekly grid skip yellow: lit → red → weekly again.
+ */
 export function nextDateOverride(
   isoDate: string,
   dow: number,
   weeklyByDow: number[],
   overrides: DateOverrideMap,
 ): AvailabilityDateOverrideMode | null {
-  if (overrides.has(isoDate)) return null
+  const current = overrides.get(isoDate)
+  if (current === 'full') return 'off'
+  if (current === 'off') return null
   if ((weeklyByDow[dow] ?? 0) > 0) return 'off'
   return 'full'
 }

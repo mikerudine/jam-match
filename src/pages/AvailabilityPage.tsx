@@ -198,7 +198,7 @@ export function AvailabilityPage() {
                 key={day.key}
                 type="button"
                 disabled={!day.inMonth}
-                aria-pressed={lit}
+                aria-pressed={lit || mode === 'off'}
                 aria-label={day.isoDate}
                 onClick={() =>
                   toggleCalendarDay(day.isoDate, day.dow, day.inMonth)
@@ -206,24 +206,21 @@ export function AvailabilityPage() {
                 className={cn(
                   'flex aspect-square flex-col items-center justify-center rounded-md text-xs transition active:scale-95 disabled:cursor-default',
                   !day.inMonth && 'opacity-25',
-                  day.isToday && 'font-semibold text-teal',
-                  lit
-                    ? mode === 'full'
-                      ? 'bg-teal/35 text-cream ring-1 ring-teal/50'
-                      : 'bg-amber/30 text-cream'
-                    : mode === 'off'
-                      ? 'bg-ink/40 text-mute ring-1 ring-dashed ring-line'
-                      : 'bg-ink/30 text-mute',
+                  day.isToday && mode !== 'off' && 'font-semibold text-teal',
+                  mode === 'off'
+                    ? 'bg-danger/35 text-cream ring-1 ring-danger/60'
+                    : mode === 'full'
+                      ? 'bg-amber/45 text-cream ring-1 ring-amber/50'
+                      : lit
+                        ? 'bg-amber/30 text-cream'
+                        : 'bg-ink/30 text-mute',
                 )}
               >
                 {day.dayOfMonth}
-                {lit ? (
-                  <span
-                    className={cn(
-                      'text-[9px] tabular-nums',
-                      mode === 'full' ? 'text-teal' : 'text-amber',
-                    )}
-                  >
+                {mode === 'off' ? (
+                  <span className="text-[9px] text-danger">{t.availability.dayBlocked}</span>
+                ) : lit ? (
+                  <span className="text-[9px] tabular-nums text-amber">
                     {day.fullOverlapHours}h
                   </span>
                 ) : null}
@@ -231,7 +228,17 @@ export function AvailabilityPage() {
             )
           })}
         </div>
-        <p className="mt-2 text-[11px] text-mute">
+        <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-mute">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-[2px] bg-amber/50" />
+            {t.availability.legendFree}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-[2px] bg-danger/50" />
+            {t.availability.legendBlocked}
+          </span>
+        </div>
+        <p className="mt-1.5 text-[11px] text-mute">
           {t.availability.calendarHint}
         </p>
       </CollapseSection>
@@ -265,9 +272,9 @@ export function AvailabilityPage() {
                   className={cn(
                     'py-1 text-center text-[10px] font-medium sm:text-xs',
                     weekMode === 'full'
-                      ? 'text-teal'
+                      ? 'text-amber'
                       : weekMode === 'off'
-                        ? 'text-mute line-through'
+                        ? 'text-danger line-through'
                         : 'text-mute',
                   )}
                 >
@@ -292,7 +299,8 @@ export function AvailabilityPage() {
                       className={cn(
                         'h-6 rounded-[3px] text-[10px] transition active:scale-95 sm:h-7 sm:rounded-md',
                         on ? 'slot-on' : 'slot-off',
-                        weekMode === 'full' && on && 'ring-1 ring-inset ring-teal/40',
+                        weekMode === 'full' && on && 'ring-1 ring-inset ring-amber/40',
+                        weekMode === 'off' && 'opacity-30',
                       )}
                     />
                   )
