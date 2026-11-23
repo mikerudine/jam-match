@@ -122,6 +122,13 @@ export function overlapIntensity(
   return 'partial'
 }
 
+/** People who filled weekly availability — empty schedules don't block "full". */
+export function activeSchedulerCount(
+  participants: OverlapParticipant[],
+): number {
+  return participants.filter((p) => p.slot_count > 0).length
+}
+
 export function hoursList(): number[] {
   const list: number[] = []
   for (let h = AVAIL_HOUR_START; h <= AVAIL_HOUR_END; h++) list.push(h)

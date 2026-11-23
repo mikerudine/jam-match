@@ -116,6 +116,7 @@ const uk = {
     cellTitle: '{count} з {total} учасників',
     needMorePeople: 'Потрібен ще хоча б один учасник із розкладом.',
     fullSummary: 'Повних спільних слотів: {n}',
+    partialSummary: 'Спільних слотів (не всі з розкладом): {n}',
     noFullOverlap: 'Повного перетину поки немає — попросіть усіх оновити розклад.',
   },
   jam: {
@@ -410,6 +411,7 @@ const en = {
     cellTitle: '{count} of {total} participants',
     needMorePeople: 'Need at least one more participant with a schedule.',
     fullSummary: 'Fully shared slots: {n}',
+    partialSummary: 'Shared slots (not everyone scheduled): {n}',
     noFullOverlap: 'No full overlap yet — ask everyone to update availability.',
   },
   jam: {

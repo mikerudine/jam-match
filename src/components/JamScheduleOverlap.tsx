@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CollapseSection } from '@/components/CollapseSection'
 import { useLocale } from '@/i18n/LocaleContext'
 import {
+  activeSchedulerCount,
   buildMonthCalendar,
   buildOverlapMap,
   fullOverlapHoursByDay,
@@ -34,9 +35,14 @@ export function JamScheduleOverlapSection({
 
   const hours = useMemo(() => hoursList(), [])
   const countMap = useMemo(() => buildOverlapMap(data.cells), [data.cells])
+  /** Ignore empty schedules so 2/2 with a third missing still lights teal. */
+  const schedulerCount = useMemo(
+    () => activeSchedulerCount(data.participants),
+    [data.participants],
+  )
   const fullByDow = useMemo(
-    () => fullOverlapHoursByDay(data.cells, data.participant_count),
-    [data.cells, data.participant_count],
+    () => fullOverlapHoursByDay(data.cells, schedulerCount),
+    [data.cells, schedulerCount],
   )
   const jamWindow = useMemo(() => {
     if (!windowStart || !windowEnd) return null
@@ -50,9 +56,9 @@ export function JamScheduleOverlapSection({
 
   const missing = data.participants.filter((p) => p.slot_count === 0)
   const fullCells = data.cells.filter(
-    (c) =>
-      data.participant_count >= 2 && c.count >= data.participant_count,
+    (c) => schedulerCount >= 2 && c.count >= schedulerCount,
   ).length
+  const bestPartialCells = data.cells.filter((c) => c.count >= 2).length
   const activeDays = fullByDow.filter((n) => n > 0).length
 
   return (
@@ -179,11 +185,16 @@ export function JamScheduleOverlapSection({
       <CollapseSection
         title={t.schedule.hoursTitle}
         summary={
-          data.participant_count < 2
+          schedulerCount < 2
             ? t.schedule.needMorePeople
             : fullCells > 0
               ? t.schedule.fullSummary.replace('{n}', String(fullCells))
-              : t.schedule.noFullOverlap
+              : bestPartialCells > 0
+                ? t.schedule.partialSummary.replace(
+                    '{n}',
+                    String(bestPartialCells),
+                  )
+                : t.schedule.noFullOverlap
         }
         open={hoursOpen}
         onToggle={() => setHoursOpen((v) => !v)}
@@ -226,10 +237,7 @@ export function JamScheduleOverlapSection({
                 </div>
                 {t.days.map((_, day) => {
                   const count = countMap.get(slotKey(day, hour)) ?? 0
-                  const intensity = overlapIntensity(
-                    count,
-                    data.participant_count,
-                  )
+                  const intensity = overlapIntensity(count, schedulerCount)
                   return (
                     <div
                       key={`${day}-${hour}`}
@@ -239,7 +247,11 @@ export function JamScheduleOverlapSection({
                               .replace('{count}', String(count))
                               .replace(
                                 '{total}',
-                                String(data.participant_count),
+                                String(
+                                  schedulerCount > 0
+                                    ? schedulerCount
+                                    : data.participant_count,
+                                ),
                               )
                           : undefined
                       }
