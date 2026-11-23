@@ -5,8 +5,11 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
+  buildFriendTelegramLink,
   buildJamTelegramLink,
+  decodeFriendStartParam,
   decodeJamStartParam,
+  encodeFriendStartParam,
   encodeJamIdForStartParam,
   encodeJamStartParam,
   readTelegramStartParam,
@@ -55,6 +58,29 @@ describe('encodeJamStartParam / decodeJamStartParam', () => {
     assert.equal(decodeJamStartParam(''), null)
     assert.equal(decodeJamStartParam(null), null)
     assert.equal(decodeJamStartParam('jam_nothex'), null)
+  })
+})
+
+describe('encodeFriendStartParam / decodeFriendStartParam', () => {
+  it('round-trips fr_<hex>', () => {
+    const param = encodeFriendStartParam(SAMPLE_UUID)
+    assert.equal(param, `fr_${SAMPLE_HEX}`)
+    assert.ok(param.length <= 64)
+    assert.equal(decodeFriendStartParam(param), SAMPLE_UUID)
+  })
+
+  it('does not confuse jam_ with fr_', () => {
+    assert.equal(decodeFriendStartParam(`jam_${SAMPLE_HEX}`), null)
+    assert.equal(decodeJamStartParam(`fr_${SAMPLE_HEX}`), null)
+  })
+})
+
+describe('buildFriendTelegramLink', () => {
+  it('builds Main Mini App friend invite link', () => {
+    assert.equal(
+      buildFriendTelegramLink(SAMPLE_UUID, { botUsername: 'jammatch_bot' }),
+      `https://t.me/jammatch_bot?startapp=fr_${SAMPLE_HEX}`,
+    )
   })
 })
 

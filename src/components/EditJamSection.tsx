@@ -8,6 +8,7 @@ import {
   INSTRUMENTS,
   JAM_FORMATS,
   type Instrument,
+  type JamAudience,
   type JamFormat,
   type JamRequest,
   type JamSeat,
@@ -76,6 +77,7 @@ export function EditJamSection({
   const [area, setArea] = useState(jam.area ?? '')
   const [baseName, setBaseName] = useState(jam.base_name ?? '')
   const [ttl, setTtl] = useState(jam.invite_ttl_hours)
+  const [audience, setAudience] = useState<JamAudience>(jam.audience ?? 'open')
 
   if (!canEdit || !creatorSeat) return null
 
@@ -91,6 +93,7 @@ export function EditJamSection({
     setArea(jam.area ?? '')
     setBaseName(jam.base_name ?? '')
     setTtl(jam.invite_ttl_hours)
+    setAudience(jam.audience ?? 'open')
     setError(null)
   }
 
@@ -139,6 +142,7 @@ export function EditJamSection({
         creator_role: creatorRole,
         keep_seat_ids: [creatorSeat!.id, ...keptSeatIds],
         add_roles: addRoles,
+        audience,
       }
       await (saveFn ?? updateJam)(payload)
       setOpen(false)
@@ -351,6 +355,32 @@ export function EditJamSection({
           placeholder="Rehearsal Point / Aza / …"
         />
       </label>
+
+      <section className="space-y-2">
+        <p className="text-sm text-mute">{t.jam.audience}</p>
+        <div className="flex gap-2">
+          {([
+            ['open', t.jam.audienceOpen],
+            ['friends', t.jam.audienceFriends],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setAudience(value)}
+              className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
+                audience === value
+                  ? 'bg-teal text-ink'
+                  : 'border border-line text-mute'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {audience === 'friends' ? (
+          <p className="text-xs text-mute">{t.jam.audienceFriendsHint}</p>
+        ) : null}
+      </section>
 
       <label className="block text-sm text-mute">
         {t.jam.ttl}

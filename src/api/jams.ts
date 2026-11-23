@@ -3,6 +3,7 @@ import { getSupabase } from '@/lib/supabase'
 import type {
   ConfirmedMember,
   Instrument,
+  JamAudience,
   JamFormat,
   JamInvite,
   JamJoinRequest,
@@ -10,7 +11,9 @@ import type {
   JamSeat,
   Profile,
   PublicJam,
+  PublicJamDenied,
 } from '@/types'
+import { isPublicJamDenied } from '@/types'
 
 export interface CreateJamInput {
   theme: string
@@ -23,6 +26,7 @@ export interface CreateJamInput {
   invite_ttl_hours: number
   creator_role: Instrument
   wanted_roles: Instrument[]
+  audience?: JamAudience
 }
 
 export async function createJam(input: CreateJamInput): Promise<string> {
@@ -37,6 +41,7 @@ export async function createJam(input: CreateJamInput): Promise<string> {
     p_creator_role: input.creator_role,
     p_wanted_roles: input.wanted_roles,
     p_theme: input.theme,
+    p_audience: input.audience ?? 'open',
   })
   if (error) throw error
   return data as string
@@ -54,6 +59,7 @@ export interface UpdateJamInput {
   creator_role: Instrument
   keep_seat_ids: string[]
   add_roles: Instrument[]
+  audience?: JamAudience
 }
 
 export async function updateJam(input: UpdateJamInput): Promise<void> {
@@ -69,6 +75,7 @@ export async function updateJam(input: UpdateJamInput): Promise<void> {
     p_creator_role: input.creator_role,
     p_keep_seat_ids: input.keep_seat_ids,
     p_add_roles: input.add_roles,
+    p_audience: input.audience ?? null,
   })
   if (error) throw error
 }
@@ -346,11 +353,28 @@ export async function getMyJoinRequest(
   return (data as JamJoinRequest | null) ?? null
 }
 
+export type PublicJamResult =
+  | { kind: 'jam'; jam: PublicJam }
+  | { kind: 'denied'; reason: PublicJamDenied['denied'] }
+  | { kind: 'none' }
+
 export async function getPublicJam(jamId: string): Promise<PublicJam | null> {
+  const result = await getPublicJamResult(jamId)
+  return result.kind === 'jam' ? result.jam : null
+}
+
+export async function getPublicJamResult(
+  jamId: string,
+): Promise<PublicJamResult> {
   const { data, error } = await getSupabase().rpc('get_public_jam', {
     p_jam_id: jamId,
   })
   if (error) throw error
-  if (!data) return null
-  return data as PublicJam
+  if (!data) return { kind: 'none' }
+  if (isPublicJamDenied(data)) {
+    return { kind: 'denied', reason: data.denied }
+  }
+  const jam = data as PublicJam
+  if (!jam.audience) jam.audience = 'open'
+  return { kind: 'jam', jam }
 }

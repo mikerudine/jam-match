@@ -5,6 +5,7 @@ export type JamStatus = 'matching' | 'confirmed' | 'cancelled' | 'completed'
 export type SeatStatus = 'open' | 'invited' | 'filled'
 export type InviteStatus = 'pending' | 'accepted' | 'skipped' | 'expired'
 export type JoinRequestStatus = 'pending' | 'accepted' | 'declined'
+export type JamAudience = 'open' | 'friends'
 export type Locale = 'uk' | 'en'
 
 export const INSTRUMENTS: Instrument[] = [
@@ -97,6 +98,7 @@ export interface JamRequest {
   window_end: string | null
   status: JamStatus
   invite_ttl_hours: number
+  audience: JamAudience
   created_at: string
 }
 
@@ -140,10 +142,26 @@ export interface PublicJam {
   window_start: string | null
   window_end: string | null
   status: JamStatus
+  audience?: JamAudience
   initiator_display_name: string
   seats: PublicJamSeat[]
   filled_count: number
   open_count: number
+}
+
+/** Explicit deny payload from get_public_jam for friends-only jams. */
+export interface PublicJamDenied {
+  denied: 'friends_only'
+}
+
+export function isPublicJamDenied(
+  value: unknown,
+): value is PublicJamDenied {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    (value as PublicJamDenied).denied === 'friends_only'
+  )
 }
 
 /** Matching or confirmed, and not past — open for join requests. */

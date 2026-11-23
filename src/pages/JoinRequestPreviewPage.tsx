@@ -24,6 +24,7 @@ const jam: JamRequest = {
   window_end: '2026-11-20T19:00:00.000Z',
   status: 'matching',
   invite_ttl_hours: 3,
+  audience: 'open',
   created_at: '2026-11-13T10:00:00.000Z',
 }
 

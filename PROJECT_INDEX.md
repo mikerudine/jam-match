@@ -2,7 +2,7 @@
 
 Mobile-first SPA (Vite + React 19 + TS) for jam/rehearsal matching. Backend: Supabase schema `jam` + Edge Functions. Static build → GitHub Pages / Telegram Mini App. Alias `@` → `src/`.
 
-**Core entities:** Profile · Event (jam) · Location (catalog + per-jam vote, max 2 / participant).
+**Core entities:** Profile · Event (jam) · Location · Friendship (Telegram deep-link `fr_<hex>`; jam `audience` open|friends).
 
 ## Entry Points
 

@@ -7,25 +7,46 @@
  */
 
 const JAM_START_PREFIX = 'jam_'
+const FRIEND_START_PREFIX = 'fr_'
 const UUID_DASHED_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const UUID_HEX_RE = /^[0-9a-f]{32}$/i
 
 /** Strip UUID dashes → 32 hex chars. Accepts dashed or already-stripped. */
-export function encodeJamIdForStartParam(jamId: string): string {
-  const trimmed = jamId.trim()
+export function encodeUuidForStartParam(id: string): string {
+  const trimmed = id.trim()
   if (UUID_DASHED_RE.test(trimmed)) {
     return trimmed.replace(/-/g, '').toLowerCase()
   }
   if (UUID_HEX_RE.test(trimmed)) {
     return trimmed.toLowerCase()
   }
-  throw new Error(`Invalid jam id for start_param: ${jamId}`)
+  throw new Error(`Invalid id for start_param: ${id}`)
 }
 
-/** Build `jam_<32hex>` startapp payload (≤ 64 chars). */
-export function encodeJamStartParam(jamId: string): string {
-  const encoded = `${JAM_START_PREFIX}${encodeJamIdForStartParam(jamId)}`
+/** @deprecated Use encodeUuidForStartParam — kept for jam call sites. */
+export function encodeJamIdForStartParam(jamId: string): string {
+  return encodeUuidForStartParam(jamId)
+}
+
+function hexToDashedUuid(hex: string): string {
+  const h = hex.toLowerCase()
+  return [
+    h.slice(0, 8),
+    h.slice(8, 12),
+    h.slice(12, 16),
+    h.slice(16, 20),
+    h.slice(20, 32),
+  ].join('-')
+}
+
+function decodeUuidBody(body: string): string | null {
+  if (UUID_DASHED_RE.test(body)) return body.toLowerCase()
+  if (!UUID_HEX_RE.test(body)) return null
+  return hexToDashedUuid(body)
+}
+
+function assertStartParam(encoded: string): string {
   if (encoded.length > 64) {
     throw new Error(`start_param too long (${encoded.length}): ${encoded}`)
   }
@@ -35,24 +56,36 @@ export function encodeJamStartParam(jamId: string): string {
   return encoded
 }
 
+/** Build `jam_<32hex>` startapp payload (≤ 64 chars). */
+export function encodeJamStartParam(jamId: string): string {
+  return assertStartParam(
+    `${JAM_START_PREFIX}${encodeUuidForStartParam(jamId)}`,
+  )
+}
+
 /** Decode `jam_<id>` → dashed UUID, or null if not a jam deep link. */
 export function decodeJamStartParam(param: string | null | undefined): string | null {
   if (!param) return null
   const raw = param.trim()
   if (!raw.toLowerCase().startsWith(JAM_START_PREFIX)) return null
+  return decodeUuidBody(raw.slice(JAM_START_PREFIX.length))
+}
 
-  const body = raw.slice(JAM_START_PREFIX.length)
-  if (UUID_DASHED_RE.test(body)) return body.toLowerCase()
-  if (!UUID_HEX_RE.test(body)) return null
+/** Build `fr_<32hex>` startapp payload for friend invite. */
+export function encodeFriendStartParam(profileId: string): string {
+  return assertStartParam(
+    `${FRIEND_START_PREFIX}${encodeUuidForStartParam(profileId)}`,
+  )
+}
 
-  const hex = body.toLowerCase()
-  return [
-    hex.slice(0, 8),
-    hex.slice(8, 12),
-    hex.slice(12, 16),
-    hex.slice(16, 20),
-    hex.slice(20, 32),
-  ].join('-')
+/** Decode `fr_<id>` → dashed profile UUID, or null. */
+export function decodeFriendStartParam(
+  param: string | null | undefined,
+): string | null {
+  if (!param) return null
+  const raw = param.trim()
+  if (!raw.toLowerCase().startsWith(FRIEND_START_PREFIX)) return null
+  return decodeUuidBody(raw.slice(FRIEND_START_PREFIX.length))
 }
 
 export interface BuildJamTelegramLinkOptions {
@@ -72,6 +105,19 @@ export function buildJamTelegramLink(
   if (!bot) throw new Error('Telegram bot username is required')
   const app = (options.appName ?? '').trim()
   const startapp = encodeJamStartParam(jamId)
+  const path = app ? `${bot}/${app}` : bot
+  return `https://t.me/${path}?startapp=${startapp}`
+}
+
+/** Friend invite Mini App link (same host rules as jam links). */
+export function buildFriendTelegramLink(
+  profileId: string,
+  options: BuildJamTelegramLinkOptions,
+): string {
+  const bot = options.botUsername.trim().replace(/^@/, '')
+  if (!bot) throw new Error('Telegram bot username is required')
+  const app = (options.appName ?? '').trim()
+  const startapp = encodeFriendStartParam(profileId)
   const path = app ? `${bot}/${app}` : bot
   return `https://t.me/${path}?startapp=${startapp}`
 }
@@ -119,14 +165,30 @@ export function readTelegramStartParam(
 }
 
 let pendingJamIdFromStartParam: string | null = null
+let pendingFriendIdFromStartParam: string | null = null
 
-/** Capture jam id from start_param once at startup (before HashRouter). */
+/** Capture jam / friend ids from start_param once at startup (before HashRouter). */
 export function capturePendingJamFromStartParam(
   win: Pick<Window, 'Telegram' | 'location'> = window,
 ): string | null {
-  const jamId = decodeJamStartParam(readTelegramStartParam(win))
-  if (jamId) pendingJamIdFromStartParam = jamId
-  return jamId
+  const param = readTelegramStartParam(win)
+  const jamId = decodeJamStartParam(param)
+  if (jamId) {
+    pendingJamIdFromStartParam = jamId
+    return jamId
+  }
+  const friendId = decodeFriendStartParam(param)
+  if (friendId) pendingFriendIdFromStartParam = friendId
+  return null
+}
+
+/** Capture friend invite from start_param (also called from jam capture). */
+export function capturePendingFriendFromStartParam(
+  win: Pick<Window, 'Telegram' | 'location'> = window,
+): string | null {
+  const friendId = decodeFriendStartParam(readTelegramStartParam(win))
+  if (friendId) pendingFriendIdFromStartParam = friendId
+  return friendId
 }
 
 export function peekPendingJamFromStartParam(): string | null {
@@ -140,7 +202,19 @@ export function takePendingJamFromStartParam(): string | null {
   return id
 }
 
+export function takePendingFriendFromStartParam(): string | null {
+  const id = pendingFriendIdFromStartParam
+  pendingFriendIdFromStartParam = null
+  return id
+}
+
 /** Test helper. */
 export function setPendingJamFromStartParamForTests(jamId: string | null): void {
   pendingJamIdFromStartParam = jamId
+}
+
+export function setPendingFriendFromStartParamForTests(
+  profileId: string | null,
+): void {
+  pendingFriendIdFromStartParam = profileId
 }

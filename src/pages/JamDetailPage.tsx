@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import {
   getJamDetail,
   getMyJoinRequest,
-  getPublicJam,
+  getPublicJamResult,
   hasSubmittedFeedback,
   runMatching,
   submitFeedback,
@@ -81,6 +81,7 @@ export function JamDetailPage() {
   const [myJoin, setMyJoin] = useState<JamJoinRequest | null>(null)
   const [joinRefresh, setJoinRefresh] = useState(0)
   const [publicJam, setPublicJam] = useState<PublicJam | null>(null)
+  const [friendsOnlyDenied, setFriendsOnlyDenied] = useState(false)
 
   async function refreshSongs(id: string, userId: string) {
     const list = await listJamSongs(id, userId)
@@ -93,14 +94,25 @@ export function JamDetailPage() {
   }
 
   async function loadPublicPreview(id: string, userId: string) {
-    const pub = await getPublicJam(id)
+    const result = await getPublicJamResult(id)
     const join = await getMyJoinRequest(id, userId)
-    setPublicJam(pub)
+    if (result.kind === 'jam') {
+      setPublicJam(result.jam)
+      setFriendsOnlyDenied(false)
+      setNoAccess(false)
+    } else if (result.kind === 'denied') {
+      setPublicJam(null)
+      setFriendsOnlyDenied(true)
+      setNoAccess(true)
+    } else {
+      setPublicJam(null)
+      setFriendsOnlyDenied(false)
+      setNoAccess(true)
+    }
     setMyJoin(join)
     setDetail(null)
     setSongList(null)
     setLocationList(null)
-    setNoAccess(!pub)
   }
 
   useEffect(() => {
@@ -307,8 +319,16 @@ export function JamDetailPage() {
         </Link>
         {noAccess ? (
           <div className="mt-6 space-y-2">
-            <h1 className="font-display text-xl">{t.jam.noAccessTitle}</h1>
-            <p className="text-sm text-mute">{t.jam.noAccessBody}</p>
+            <h1 className="font-display text-xl">
+              {friendsOnlyDenied
+                ? t.jam.friendsOnlyTitle
+                : t.jam.noAccessTitle}
+            </h1>
+            <p className="text-sm text-mute">
+              {friendsOnlyDenied
+                ? t.jam.friendsOnlyBody
+                : t.jam.noAccessBody}
+            </p>
           </div>
         ) : (
           <p className="mt-4 text-danger">{error ?? t.common.error}</p>
@@ -339,11 +359,18 @@ export function JamDetailPage() {
       </Link>
 
       <div>
-        <p className="text-xs uppercase tracking-wide text-amber">
-          {jam.status === 'confirmed'
-            ? t.jam.confirmedTitle
-            : t.formats[jam.format]}
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs uppercase tracking-wide text-amber">
+            {jam.status === 'confirmed'
+              ? t.jam.confirmedTitle
+              : t.formats[jam.format]}
+          </p>
+          {(jam.audience ?? 'open') === 'friends' ? (
+            <span className="rounded-full bg-teal/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal">
+              {t.jam.friendsOnlyBadge}
+            </span>
+          ) : null}
+        </div>
         <h1 className="font-display mt-1 text-2xl">
           {jam.theme?.trim() || t.formats[jam.format]}
         </h1>

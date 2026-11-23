@@ -17,6 +17,7 @@ import {
   INSTRUMENTS,
   JAM_FORMATS,
   type Instrument,
+  type JamAudience,
   type JamFormat,
   type Profile,
 } from '@/types'
@@ -42,6 +43,7 @@ export function NewJamPage() {
   const [area, setArea] = useState('')
   const [baseName, setBaseName] = useState('')
   const [ttl, setTtl] = useState(3)
+  const [audience, setAudience] = useState<JamAudience>('open')
   const [locationDrafts, setLocationDrafts] = useState<LocationDraftItem[]>([])
 
   useEffect(() => {
@@ -99,6 +101,7 @@ export function NewJamPage() {
         invite_ttl_hours: ttl,
         creator_role: creatorRole,
         wanted_roles: wanted,
+        audience,
       })
       for (const item of locationDrafts) {
         if (item.kind === 'existing') {
@@ -312,6 +315,32 @@ export function NewJamPage() {
           </label>
         </>
       )}
+
+      <section className="space-y-2 rounded-2xl border border-line bg-panel/80 p-4">
+        <p className="text-sm text-mute">{t.jam.audience}</p>
+        <div className="flex gap-2">
+          {([
+            ['open', t.jam.audienceOpen],
+            ['friends', t.jam.audienceFriends],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setAudience(value)}
+              className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
+                audience === value
+                  ? 'bg-teal text-ink'
+                  : 'border border-line text-mute'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {audience === 'friends' ? (
+          <p className="text-xs text-mute">{t.jam.audienceFriendsHint}</p>
+        ) : null}
+      </section>
 
       <LocationDraftPicker
         value={locationDrafts}

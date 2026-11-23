@@ -7,14 +7,17 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom'
+import { acceptFriendInvite } from '@/api/friends'
 import { AuthProvider, useAuth } from '@/auth/AuthContext'
 import { Layout } from '@/components/Layout'
 import { Loading } from '@/components/Loading'
 import { SetupScreen } from '@/components/SetupScreen'
-import { LocaleProvider } from '@/i18n/LocaleContext'
+import { LocaleProvider, useLocale } from '@/i18n/LocaleContext'
 import {
+  decodeFriendStartParam,
   decodeJamStartParam,
   readTelegramStartParam,
+  takePendingFriendFromStartParam,
   takePendingJamFromStartParam,
 } from '@/lib/telegramDeepLink'
 import { AvailabilityPage } from '@/pages/AvailabilityPage'
@@ -48,6 +51,48 @@ function StartParamRedirect() {
   return null
 }
 
+/** Accept friend invite from start_param=fr_<uuid>, then open profile. */
+function FriendInviteHandler() {
+  const { session } = useAuth()
+  const { t } = useLocale()
+  const navigate = useNavigate()
+  const done = useRef(false)
+
+  useEffect(() => {
+    if (!session || done.current) return
+    const inviterId =
+      takePendingFriendFromStartParam() ??
+      decodeFriendStartParam(readTelegramStartParam())
+    if (!inviterId) return
+    done.current = true
+
+    if (inviterId === session.user.id) {
+      navigate('/profile', { replace: true })
+      return
+    }
+
+    ;(async () => {
+      try {
+        await acceptFriendInvite(inviterId)
+        navigate('/profile', {
+          replace: true,
+          state: { friendBanner: t.friends.accepted },
+        })
+      } catch (err) {
+        navigate('/profile', {
+          replace: true,
+          state: {
+            friendBanner:
+              err instanceof Error ? err.message : t.common.error,
+          },
+        })
+      }
+    })()
+  }, [session, navigate, t.friends.accepted, t.common.error])
+
+  return null
+}
+
 function ProtectedRoutes() {
   const { session, loading, configured } = useAuth()
 
@@ -58,6 +103,7 @@ function ProtectedRoutes() {
   return (
     <>
       <StartParamRedirect />
+      <FriendInviteHandler />
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />

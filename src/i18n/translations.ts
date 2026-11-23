@@ -148,6 +148,26 @@ const uk = {
     publicPreviewHint:
       'Публічний перегляд: точна адреса й контакти зʼявляться після прийняття.',
     seatCounts: 'Зайнято {filled} · вільно {open}',
+    audience: 'Хто бачить джем',
+    audienceOpen: 'Усі',
+    audienceFriends: 'Тільки друзі',
+    audienceFriendsHint: 'Матчинг і join лише для ваших друзів з Telegram-посилання.',
+    friendsOnlyBadge: 'Тільки друзі',
+    friendsOnlyTitle: 'Тільки для друзів',
+    friendsOnlyBody:
+      'Цей джем закритий. Попросіть організатора надіслати запрошення в друзі через Telegram.',
+  },
+  friends: {
+    title: 'Друзі',
+    hint: 'Додавання лише через Telegram-посилання — без пошуку в додатку.',
+    empty: 'Поки немає друзів. Надішліть посилання знайомому в Telegram.',
+    share: 'Поділитися запрошенням',
+    copyLink: 'Скопіювати посилання',
+    linkCopied: 'Посилання скопійовано',
+    remove: 'Видалити',
+    accepted: 'Ви тепер друзі',
+    shareUnavailable: 'Спочатку налаштуйте VITE_TELEGRAM_BOT_USERNAME',
+    shareText: 'Додай мене в друзі в Jam Match',
   },
   songs: {
     title: 'Список пісень',
@@ -382,6 +402,26 @@ const en = {
     publicPreviewHint:
       'Public preview: exact place and contacts appear after you are accepted.',
     seatCounts: 'Filled {filled} · open {open}',
+    audience: 'Who can see this jam',
+    audienceOpen: 'Everyone',
+    audienceFriends: 'Friends only',
+    audienceFriendsHint: 'Matching and join are limited to friends from your Telegram invite link.',
+    friendsOnlyBadge: 'Friends only',
+    friendsOnlyTitle: 'Friends only',
+    friendsOnlyBody:
+      'This jam is private. Ask the organizer to send you a friend invite via Telegram.',
+  },
+  friends: {
+    title: 'Friends',
+    hint: 'Add friends only via a Telegram link — no in-app search.',
+    empty: 'No friends yet. Share your invite link in Telegram.',
+    share: 'Share invite',
+    copyLink: 'Copy link',
+    linkCopied: 'Link copied',
+    remove: 'Remove',
+    accepted: 'You are now friends',
+    shareUnavailable: 'Set VITE_TELEGRAM_BOT_USERNAME first',
+    shareText: 'Add me as a friend on Jam Match',
   },
   songs: {
     title: 'Song list',

@@ -23,6 +23,7 @@ const initialJam: JamRequest = {
   window_end: '2026-11-20T19:00:00.000Z',
   status: 'matching',
   invite_ttl_hours: 3,
+  audience: 'open',
   created_at: '2026-11-13T10:00:00.000Z',
 }
 
@@ -85,6 +86,7 @@ function PreviewInner() {
       window_start: input.window_start,
       window_end: input.window_end,
       invite_ttl_hours: input.invite_ttl_hours,
+      audience: input.audience ?? prev.audience ?? 'open',
     }))
 
     const kept = new Set(input.keep_seat_ids)

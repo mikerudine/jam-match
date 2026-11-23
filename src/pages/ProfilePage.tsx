@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { listFriends, removeFriend } from '@/api/friends'
 import { listMyJams } from '@/api/jams'
 import { upsertProfile, fetchProfile } from '@/api/profile'
 import { useAuth } from '@/auth/AuthContext'
 import { ChipSelect } from '@/components/ChipSelect'
 import { Loading } from '@/components/Loading'
 import { useLocale } from '@/i18n/LocaleContext'
+import { telegramAppName, telegramBotUsername } from '@/lib/config'
+import { buildFriendTelegramLink } from '@/lib/telegramDeepLink'
+import { copyTextToClipboard, shareJamLink } from '@/lib/telegramShare'
 import {
   AREA_OPTIONS,
   GENRE_OPTIONS,
@@ -23,10 +27,12 @@ import {
 export function ProfilePage() {
   const { session, auth } = useAuth()
   const { t, locale, setLocale } = useLocale()
+  const location = useLocation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [friendBanner, setFriendBanner] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [telegram, setTelegram] = useState('')
   const [telegramPhoto, setTelegramPhoto] = useState<string | null>(null)
@@ -37,10 +43,21 @@ export function ProfilePage() {
   const [areas, setAreas] = useState<string[]>([])
   const [demoUrl, setDemoUrl] = useState('')
   const [reliability, setReliability] = useState({ score: 1, count: 0 })
+  const [friends, setFriends] = useState<Profile[]>([])
+  const [friendsBusy, setFriendsBusy] = useState(false)
+  const [friendCopied, setFriendCopied] = useState(false)
   const [archiveJams, setArchiveJams] = useState<
     Array<JamRequest & { seats: JamSeat[] }>
   >([])
   const [archiveOpen, setArchiveOpen] = useState(false)
+
+  useEffect(() => {
+    const state = location.state as { friendBanner?: string } | null
+    if (state?.friendBanner) {
+      setFriendBanner(state.friendBanner)
+      window.history.replaceState({}, '')
+    }
+  }, [location.state])
 
   useEffect(() => {
     if (!session) return
@@ -48,11 +65,13 @@ export function ProfilePage() {
     Promise.all([
       fetchProfile(session.user.id),
       listMyJams(session.user.id),
+      listFriends().catch(() => [] as Profile[]),
     ])
-      .then(([p, jams]) => {
+      .then(([p, jams, friendRows]) => {
         if (cancelled) return
         if (p) applyProfile(p)
         setArchiveJams(jams.filter((j) => isJamArchived(j)))
+        setFriends(friendRows)
       })
       .catch((err) => setError(err instanceof Error ? err.message : t.common.error))
       .finally(() => {
@@ -62,6 +81,64 @@ export function ProfilePage() {
       cancelled = true
     }
   }, [session, t.common.error])
+
+  function friendInviteUrl(): string | null {
+    if (!session || !telegramBotUsername) return null
+    try {
+      return buildFriendTelegramLink(session.user.id, {
+        botUsername: telegramBotUsername,
+        appName: telegramAppName,
+      })
+    } catch {
+      return null
+    }
+  }
+
+  async function onShareFriend() {
+    const url = friendInviteUrl()
+    if (!url) {
+      setError(t.friends.shareUnavailable)
+      return
+    }
+    setFriendsBusy(true)
+    setError(null)
+    try {
+      await shareJamLink({ url, text: t.friends.shareText })
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      setError(err instanceof Error ? err.message : t.common.error)
+    } finally {
+      setFriendsBusy(false)
+    }
+  }
+
+  async function onCopyFriendLink() {
+    const url = friendInviteUrl()
+    if (!url) {
+      setError(t.friends.shareUnavailable)
+      return
+    }
+    const ok = await copyTextToClipboard(url)
+    if (ok) {
+      setFriendCopied(true)
+      window.setTimeout(() => setFriendCopied(false), 2000)
+    } else {
+      setError(t.common.error)
+    }
+  }
+
+  async function onRemoveFriend(id: string) {
+    setFriendsBusy(true)
+    setError(null)
+    try {
+      await removeFriend(id)
+      setFriends((rows) => rows.filter((f) => f.id !== id))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.common.error)
+    } finally {
+      setFriendsBusy(false)
+    }
+  }
 
   const archiveSorted = useMemo(
     () =>
@@ -128,6 +205,66 @@ export function ProfilePage() {
           {t.auth.signOut}
         </button>
       </div>
+
+      {friendBanner ? (
+        <p className="rounded-xl border border-teal/40 bg-teal/10 px-3 py-2 text-sm text-teal">
+          {friendBanner}
+        </p>
+      ) : null}
+
+      <section className="space-y-3 rounded-2xl border border-line bg-panel/80 p-4">
+        <div>
+          <h2 className="font-display text-lg">{t.friends.title}</h2>
+          <p className="mt-1 text-xs text-mute">{t.friends.hint}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={friendsBusy}
+            onClick={onShareFriend}
+            className="rounded-xl bg-teal px-3 py-2 text-sm font-semibold text-ink disabled:opacity-60"
+          >
+            {t.friends.share}
+          </button>
+          <button
+            type="button"
+            disabled={friendsBusy}
+            onClick={onCopyFriendLink}
+            className="rounded-xl border border-line px-3 py-2 text-sm text-mute"
+          >
+            {friendCopied ? t.friends.linkCopied : t.friends.copyLink}
+          </button>
+        </div>
+        {friends.length === 0 ? (
+          <p className="text-sm text-mute">{t.friends.empty}</p>
+        ) : (
+          <ul className="space-y-2">
+            {friends.map((f) => (
+              <li
+                key={f.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-line/70 bg-panel-2/50 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-cream">
+                    {f.display_name || '—'}
+                  </p>
+                  {f.telegram_handle ? (
+                    <p className="text-xs text-mute">@{f.telegram_handle}</p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  disabled={friendsBusy}
+                  onClick={() => onRemoveFriend(f.id)}
+                  className="shrink-0 text-xs text-danger"
+                >
+                  {t.friends.remove}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <Field label={t.profile.displayName}>
         <input
