@@ -16,7 +16,7 @@ export function Layout() {
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-24 pt-5">
       <header className="mb-5 flex items-start justify-between gap-3 anim-rise">
         <div>
-          <p className="font-display text-3xl font-extrabold tracking-tight text-cream">
+          <p className="font-brand text-4xl leading-none text-cream">
             {t.brand}
           </p>
           <p className="mt-1 text-sm text-mute">{t.tagline}</p>

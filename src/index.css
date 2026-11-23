@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 @theme {
+  --font-brand: 'Rock 3D', system-ui, sans-serif;
   --font-display: 'Syne', sans-serif;
   --font-sans: 'Manrope', sans-serif;
 
@@ -53,6 +54,12 @@
 }
 
 @layer utilities {
+  .font-brand {
+    font-family: var(--font-brand);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+
   .font-display {
     font-family: var(--font-display);
   }

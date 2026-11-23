@@ -95,7 +95,7 @@ export function SignInPage() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-5 py-10">
       <div className="anim-rise">
-        <p className="font-display text-4xl font-extrabold text-cream">{t.brand}</p>
+        <p className="font-brand text-5xl leading-none text-cream">{t.brand}</p>
         <p className="mt-2 text-mute">{t.tagline}</p>
       </div>
 
