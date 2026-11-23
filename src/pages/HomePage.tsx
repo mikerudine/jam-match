@@ -87,25 +87,14 @@ export function HomePage() {
     [myJams],
   )
 
-  const myIds = useMemo(() => new Set(myOpen.map((j) => j.id)), [myOpen])
-
   const friendsJams = useMemo(
-    () =>
-      browse.filter(
-        (j) => j.is_friend_creator && !j.i_am_participant && !myIds.has(j.id),
-      ),
-    [browse, myIds],
+    () => browse.filter((j) => j.has_friend_participant),
+    [browse],
   )
 
   const matchJams = useMemo(
-    () =>
-      browse.filter(
-        (j) =>
-          j.covers_my_availability &&
-          !j.i_am_participant &&
-          !myIds.has(j.id),
-      ),
-    [browse, myIds],
+    () => browse.filter((j) => j.covers_my_availability),
+    [browse],
   )
 
   const allJams = useMemo(() => browse, [browse])

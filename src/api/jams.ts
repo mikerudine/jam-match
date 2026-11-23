@@ -140,6 +140,8 @@ export interface BrowseJamRow extends JamRequest {
   open_count: number
   covers_my_availability: boolean
   is_friend_creator: boolean
+  /** True if any other participant is a friend (not only the organizer). */
+  has_friend_participant: boolean
   i_am_participant: boolean
   suggested_window_start?: string | null
   suggested_window_end?: string | null
