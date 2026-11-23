@@ -93,6 +93,7 @@ export async function listMyJams(userId: string): Promise<
 > {
   const supabase = getSupabase()
 
+  // Scheduled / mine = seats I fill + jams I created (organizer view).
   const { data: seatRows, error: seatErr } = await supabase
     .from('jam_seats')
     .select('jam_id')
@@ -130,6 +131,22 @@ export async function listMyJams(userId: string): Promise<
     ...(jam as JamRequest),
     seats: (seats ?? []).filter((s) => s.jam_id === jam.id) as JamSeat[],
   }))
+}
+
+/** Discoverable feed row for home tabs (RPC jam.list_browse_jams). */
+export interface BrowseJamRow extends JamRequest {
+  creator_display_name: string
+  filled_count: number
+  open_count: number
+  covers_my_availability: boolean
+  is_friend_creator: boolean
+  i_am_participant: boolean
+}
+
+export async function listBrowseJams(): Promise<BrowseJamRow[]> {
+  const { data, error } = await getSupabase().rpc('list_browse_jams')
+  if (error) throw error
+  return (data ?? []) as BrowseJamRow[]
 }
 
 export async function getJamDetail(jamId: string): Promise<{
