@@ -6,10 +6,12 @@ import {
   activeSchedulerCount,
   buildMonthCalendar,
   buildOverlapMap,
+  buildOverlapUsersMap,
   fullOverlapHoursByDay,
   hoursList,
   monthLabel,
-  overlapIntensity,
+  participantColorById,
+  stripedCellBackground,
   type JamScheduleOverlap,
 } from '@/lib/scheduleOverlap'
 import { cn, slotKey } from '@/lib/utils'
@@ -35,6 +37,17 @@ export function JamScheduleOverlapSection({
 
   const hours = useMemo(() => hoursList(), [])
   const countMap = useMemo(() => buildOverlapMap(data.cells), [data.cells])
+  const usersMap = useMemo(() => buildOverlapUsersMap(data.cells), [data.cells])
+  const colorById = useMemo(
+    () => participantColorById(data.participants),
+    [data.participants],
+  )
+  const nameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const p of data.participants) map.set(p.user_id, p.display_name)
+    return map
+  }, [data.participants])
+
   /** Ignore empty schedules so 2/2 with a third missing still lights teal. */
   const schedulerCount = useMemo(
     () => activeSchedulerCount(data.participants),
@@ -69,22 +82,32 @@ export function JamScheduleOverlapSection({
       </div>
 
       <ul className="flex flex-wrap gap-2">
-        {data.participants.map((p) => (
-          <li
-            key={p.user_id}
-            className={cn(
-              'rounded-full border px-2.5 py-1 text-xs',
-              p.slot_count > 0
-                ? 'border-teal/40 bg-teal/10 text-cream'
-                : 'border-amber/40 bg-amber/10 text-amber',
-            )}
-          >
-            {p.display_name}
-            {p.slot_count > 0
-              ? ` · ${p.slot_count}`
-              : ` · ${t.schedule.noSlots}`}
-          </li>
-        ))}
+        {data.participants.map((p) => {
+          const color = colorById.get(p.user_id)
+          return (
+            <li
+              key={p.user_id}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs',
+                p.slot_count > 0
+                  ? 'border-line bg-ink/40 text-cream'
+                  : 'border-amber/40 bg-amber/10 text-amber',
+              )}
+            >
+              {p.slot_count > 0 && color ? (
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                  style={{ backgroundColor: color }}
+                  aria-hidden
+                />
+              ) : null}
+              {p.display_name}
+              {p.slot_count > 0
+                ? ` · ${p.slot_count}`
+                : ` · ${t.schedule.noSlots}`}
+            </li>
+          )
+        })}
       </ul>
 
       {missing.length > 0 ? (
@@ -200,15 +223,22 @@ export function JamScheduleOverlapSection({
         onToggle={() => setHoursOpen((v) => !v)}
         className="border-line/70 bg-panel-2/30"
       >
+        <p className="mb-2 text-[11px] text-mute">{t.schedule.hoursHint}</p>
         <div className="mb-2 flex flex-wrap items-center gap-3 text-[11px] text-mute">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-[2px] bg-teal/80" />
-            {t.schedule.legendFull}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-[2px] bg-amber/50" />
-            {t.schedule.legendPartial}
-          </span>
+          {data.participants
+            .filter((p) => p.slot_count > 0)
+            .map((p) => (
+              <span
+                key={p.user_id}
+                className="inline-flex items-center gap-1.5"
+              >
+                <span
+                  className="h-3 w-3 rounded-[2px]"
+                  style={{ backgroundColor: colorById.get(p.user_id) }}
+                />
+                {p.display_name}
+              </span>
+            ))}
           <span className="inline-flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-[2px] bg-ink/50 ring-1 ring-line" />
             {t.schedule.legendNone}
@@ -236,31 +266,34 @@ export function JamScheduleOverlapSection({
                   {String(hour).padStart(2, '0')}
                 </div>
                 {t.days.map((_, day) => {
-                  const count = countMap.get(slotKey(day, hour)) ?? 0
-                  const intensity = overlapIntensity(count, schedulerCount)
+                  const key = slotKey(day, hour)
+                  const count = countMap.get(key) ?? 0
+                  const userIds = usersMap.get(key) ?? []
+                  // Stripe order follows participant list (display_name).
+                  const orderedIds = data.participants
+                    .map((p) => p.user_id)
+                    .filter((id) => userIds.includes(id))
+                  const colors = orderedIds
+                    .map((id) => colorById.get(id))
+                    .filter((c): c is string => Boolean(c))
+                  const names = orderedIds
+                    .map((id) => nameById.get(id))
+                    .filter(Boolean)
+                    .join(', ')
+                  const bg = stripedCellBackground(colors)
                   return (
                     <div
                       key={`${day}-${hour}`}
                       title={
                         count > 0
-                          ? t.schedule.cellTitle
-                              .replace('{count}', String(count))
-                              .replace(
-                                '{total}',
-                                String(
-                                  schedulerCount > 0
-                                    ? schedulerCount
-                                    : data.participant_count,
-                                ),
-                              )
-                          : undefined
+                          ? t.schedule.cellTitle.replace('{names}', names)
+                          : t.schedule.cellTitleEmpty
                       }
                       className={cn(
-                        'h-6 rounded-[3px] sm:h-7 sm:rounded-md',
-                        intensity === 'full' && 'bg-teal/85',
-                        intensity === 'partial' && 'bg-amber/45',
-                        intensity === 'none' && 'bg-ink/40',
+                        'h-6 overflow-hidden rounded-[3px] sm:h-7 sm:rounded-md',
+                        !bg && 'bg-ink/40',
                       )}
+                      style={bg ? { background: bg } : undefined}
                     />
                   )
                 })}

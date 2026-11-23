@@ -10,10 +10,15 @@ export async function fetchJamScheduleOverlap(
   })
   if (error) throw error
   const payload = (data ?? {}) as Partial<JamScheduleOverlap>
+  const cells = (payload.cells ?? []).map((c) => ({
+    ...c,
+    user_ids: Array.isArray(c.user_ids) ? c.user_ids : [],
+    count: c.count ?? (Array.isArray(c.user_ids) ? c.user_ids.length : 0),
+  }))
   return {
     participant_count: payload.participant_count ?? 0,
     participants: payload.participants ?? [],
-    cells: payload.cells ?? [],
+    cells,
   }
 }
 

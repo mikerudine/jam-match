@@ -93,6 +93,8 @@ export interface OverlapCell {
   day_of_week: number
   hour: number
   count: number
+  /** Who is free in this slot (when provided by RPC). */
+  user_ids?: string[]
 }
 
 export interface JamScheduleOverlap {
@@ -103,6 +105,18 @@ export interface JamScheduleOverlap {
 
 export type OverlapIntensity = 'none' | 'partial' | 'full'
 
+/** Distinct colors for hour-grid stripes (dark UI). */
+export const PARTICIPANT_PALETTE = [
+  '#2dd4bf',
+  '#f59e0b',
+  '#fb7185',
+  '#38bdf8',
+  '#a3e635',
+  '#f97316',
+  '#e2e8f0',
+  '#c084fc',
+] as const
+
 export function buildOverlapMap(
   cells: OverlapCell[],
 ): Map<string, number> {
@@ -111,6 +125,39 @@ export function buildOverlapMap(
     map.set(slotKey(c.day_of_week, c.hour), c.count)
   }
   return map
+}
+
+export function buildOverlapUsersMap(
+  cells: OverlapCell[],
+): Map<string, string[]> {
+  const map = new Map<string, string[]>()
+  for (const c of cells) {
+    map.set(slotKey(c.day_of_week, c.hour), c.user_ids ?? [])
+  }
+  return map
+}
+
+/** Stable color per participant (order = display_name sort from API). */
+export function participantColorById(
+  participants: OverlapParticipant[],
+): Map<string, string> {
+  const map = new Map<string, string>()
+  participants.forEach((p, i) => {
+    map.set(p.user_id, PARTICIPANT_PALETTE[i % PARTICIPANT_PALETTE.length]!)
+  })
+  return map
+}
+
+/** Equal vertical stripes for who is free in a cell. */
+export function stripedCellBackground(colors: string[]): string | undefined {
+  if (colors.length === 0) return undefined
+  if (colors.length === 1) return colors[0]
+  const stops = colors.flatMap((c, i) => {
+    const a = ((i / colors.length) * 100).toFixed(2)
+    const b = (((i + 1) / colors.length) * 100).toFixed(2)
+    return [`${c} ${a}%`, `${c} ${b}%`]
+  })
+  return `linear-gradient(to right, ${stops.join(', ')})`
 }
 
 export function overlapIntensity(
