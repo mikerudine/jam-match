@@ -61,6 +61,16 @@ export function fullOverlapHoursByDay(
   return byDay
 }
 
+/** Count selected hours per weekday from slot keys `day-hour`. */
+export function hoursCountByDayFromKeys(keys: Iterable<string>): number[] {
+  const byDay = Array.from({ length: AVAIL_DAYS }, () => 0)
+  for (const key of keys) {
+    const [day] = key.split('-').map(Number)
+    if (day >= 0 && day < AVAIL_DAYS) byDay[day] += 1
+  }
+  return byDay
+}
+
 export interface CalendarDay {
   date: Date
   key: string

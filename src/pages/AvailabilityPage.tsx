@@ -1,25 +1,39 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchAvailability, replaceAvailability } from '@/api/availability'
 import { useAuth } from '@/auth/AuthContext'
+import { CollapseSection } from '@/components/CollapseSection'
 import { Loading } from '@/components/Loading'
 import { useLocale } from '@/i18n/LocaleContext'
+import {
+  buildMonthCalendar,
+  hoursCountByDayFromKeys,
+  hoursList,
+  monthLabel,
+} from '@/lib/scheduleOverlap'
 import { cn, slotKey } from '@/lib/utils'
-import { AVAIL_HOUR_END, AVAIL_HOUR_START } from '@/types'
 
 export function AvailabilityPage() {
   const { session } = useAuth()
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [hoursOpen, setHoursOpen] = useState(false)
+  const [monthAnchor, setMonthAnchor] = useState(() => new Date())
 
-  const hours = useMemo(() => {
-    const list: number[] = []
-    for (let h = AVAIL_HOUR_START; h <= AVAIL_HOUR_END; h++) list.push(h)
-    return list
-  }, [])
+  const hours = useMemo(() => hoursList(), [])
+  const hoursByDow = useMemo(
+    () => hoursCountByDayFromKeys(selected),
+    [selected],
+  )
+  const calendar = useMemo(
+    () => buildMonthCalendar(monthAnchor, hoursByDow, null),
+    [monthAnchor, hoursByDow],
+  )
+  const activeDays = hoursByDow.filter((n) => n > 0).length
 
   useEffect(() => {
     if (!session) return
@@ -76,46 +90,131 @@ export function AvailabilityPage() {
         <p className="mt-1 text-sm text-mute">{t.availability.hint}</p>
       </div>
 
-      <div className="w-full min-w-0 rounded-2xl border border-line bg-panel/70 p-2">
+      <CollapseSection
+        title={t.availability.calendarTitle}
+        summary={t.availability.calendarSummary
+          .replace('{days}', String(activeDays))
+          .replace('{hours}', String(selected.size))}
+        open={calendarOpen}
+        onToggle={() => setCalendarOpen((v) => !v)}
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            aria-label={t.schedule.prevMonth}
+            onClick={() =>
+              setMonthAnchor(
+                (d) => new Date(d.getFullYear(), d.getMonth() - 1, 1),
+              )
+            }
+            className="rounded-lg border border-line px-2 py-1 text-sm text-mute hover:text-cream"
+          >
+            ←
+          </button>
+          <p className="font-medium capitalize text-cream">
+            {monthLabel(monthAnchor, locale)}
+          </p>
+          <button
+            type="button"
+            aria-label={t.schedule.nextMonth}
+            onClick={() =>
+              setMonthAnchor(
+                (d) => new Date(d.getFullYear(), d.getMonth() + 1, 1),
+              )
+            }
+            className="rounded-lg border border-line px-2 py-1 text-sm text-mute hover:text-cream"
+          >
+            →
+          </button>
+        </div>
         <div
-          className="grid w-full gap-0.5"
-          style={{
-            gridTemplateColumns: `1.75rem repeat(7, minmax(0, 1fr))`,
-          }}
+          className="grid gap-1"
+          style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}
         >
-          <div />
           {t.days.map((d) => (
             <div
               key={d}
-              className="py-1 text-center text-[10px] font-medium text-mute sm:text-xs"
+              className="py-1 text-center text-[10px] font-medium text-mute"
             >
               {d}
             </div>
           ))}
-          {hours.map((hour) => (
-            <div key={hour} className="contents">
-              <div className="flex items-center justify-end pr-0.5 text-[9px] text-mute sm:text-[10px]">
-                {String(hour).padStart(2, '0')}
-              </div>
-              {t.days.map((_, day) => {
-                const on = selected.has(slotKey(day, hour))
-                return (
-                  <button
-                    key={`${day}-${hour}`}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => toggle(day, hour)}
-                    className={cn(
-                      'h-6 rounded-[3px] text-[10px] transition active:scale-95 sm:h-7 sm:rounded-md',
-                      on ? 'slot-on' : 'slot-off',
-                    )}
-                  />
-                )
-              })}
+          {calendar.map((day) => (
+            <div
+              key={day.key}
+              className={cn(
+                'flex aspect-square flex-col items-center justify-center rounded-md text-xs',
+                !day.inMonth && 'opacity-25',
+                day.isToday && 'font-semibold text-teal',
+                day.fullOverlapHours > 0
+                  ? 'bg-amber/30 text-cream'
+                  : 'bg-ink/30 text-mute',
+              )}
+            >
+              {day.dayOfMonth}
+              {day.fullOverlapHours > 0 ? (
+                <span className="text-[9px] tabular-nums text-amber">
+                  {day.fullOverlapHours}h
+                </span>
+              ) : null}
             </div>
           ))}
         </div>
-      </div>
+        <p className="mt-2 text-[11px] text-mute">
+          {t.availability.calendarHint}
+        </p>
+      </CollapseSection>
+
+      <CollapseSection
+        title={t.availability.hoursTitle}
+        summary={t.availability.hoursSummary.replace(
+          '{n}',
+          String(selected.size),
+        )}
+        open={hoursOpen}
+        onToggle={() => setHoursOpen((v) => !v)}
+      >
+        <div className="w-full min-w-0 rounded-xl border border-line/70 bg-panel-2/40 p-2">
+          <div
+            className="grid w-full gap-0.5"
+            style={{
+              gridTemplateColumns: `1.75rem repeat(7, minmax(0, 1fr))`,
+            }}
+          >
+            <div />
+            {t.days.map((d) => (
+              <div
+                key={d}
+                className="py-1 text-center text-[10px] font-medium text-mute sm:text-xs"
+              >
+                {d}
+              </div>
+            ))}
+            {hours.map((hour) => (
+              <div key={hour} className="contents">
+                <div className="flex items-center justify-end pr-0.5 text-[9px] text-mute sm:text-[10px]">
+                  {String(hour).padStart(2, '0')}
+                </div>
+                {t.days.map((_, day) => {
+                  const on = selected.has(slotKey(day, hour))
+                  return (
+                    <button
+                      key={`${day}-${hour}`}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => toggle(day, hour)}
+                      className={cn(
+                        'h-6 rounded-[3px] text-[10px] transition active:scale-95 sm:h-7 sm:rounded-md',
+                        on ? 'slot-on' : 'slot-off',
+                      )}
+                    />
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </CollapseSection>
 
       <div className="flex gap-2">
         <button

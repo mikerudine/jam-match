@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CollapseSection } from '@/components/CollapseSection'
 import { useLocale } from '@/i18n/LocaleContext'
 import {
   buildMonthCalendar,
@@ -24,6 +25,8 @@ export function JamScheduleOverlapSection({
   windowEnd,
 }: JamScheduleOverlapProps) {
   const { t, locale } = useLocale()
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [hoursOpen, setHoursOpen] = useState(false)
   const [monthAnchor, setMonthAnchor] = useState(() => {
     if (windowStart) return new Date(windowStart)
     return new Date()
@@ -50,9 +53,10 @@ export function JamScheduleOverlapSection({
     (c) =>
       data.participant_count >= 2 && c.count >= data.participant_count,
   ).length
+  const activeDays = fullByDow.filter((n) => n > 0).length
 
   return (
-    <section className="space-y-4 rounded-2xl border border-line bg-panel/90 p-4 anim-rise">
+    <section className="space-y-3 rounded-2xl border border-line bg-panel/90 p-4 anim-rise">
       <div>
         <h2 className="font-display text-lg">{t.schedule.title}</h2>
         <p className="mt-1 text-sm text-mute">{t.schedule.hint}</p>
@@ -89,8 +93,15 @@ export function JamScheduleOverlapSection({
         </p>
       ) : null}
 
-      {/* Month calendar — weekdays tinted by full-overlap hour count */}
-      <div className="rounded-xl border border-line/70 bg-panel-2/40 p-3">
+      <CollapseSection
+        title={t.schedule.calendarTitle}
+        summary={t.schedule.calendarSummary
+          .replace('{days}', String(activeDays))
+          .replace('{hours}', String(fullCells))}
+        open={calendarOpen}
+        onToggle={() => setCalendarOpen((v) => !v)}
+        className="border-line/70 bg-panel-2/30"
+      >
         <div className="mb-2 flex items-center justify-between gap-2">
           <button
             type="button"
@@ -163,10 +174,21 @@ export function JamScheduleOverlapSection({
           ))}
         </div>
         <p className="mt-2 text-[11px] text-mute">{t.schedule.calendarHint}</p>
-      </div>
+      </CollapseSection>
 
-      {/* Hour square — intersection heat map */}
-      <div>
+      <CollapseSection
+        title={t.schedule.hoursTitle}
+        summary={
+          data.participant_count < 2
+            ? t.schedule.needMorePeople
+            : fullCells > 0
+              ? t.schedule.fullSummary.replace('{n}', String(fullCells))
+              : t.schedule.noFullOverlap
+        }
+        open={hoursOpen}
+        onToggle={() => setHoursOpen((v) => !v)}
+        className="border-line/70 bg-panel-2/30"
+      >
         <div className="mb-2 flex flex-wrap items-center gap-3 text-[11px] text-mute">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-[2px] bg-teal/80" />
@@ -181,7 +203,7 @@ export function JamScheduleOverlapSection({
             {t.schedule.legendNone}
           </span>
         </div>
-        <div className="w-full min-w-0 rounded-xl border border-line/70 bg-panel-2/40 p-2">
+        <div className="w-full min-w-0 rounded-xl border border-line/70 bg-ink/20 p-2">
           <div
             className="grid w-full gap-0.5"
             style={{
@@ -234,14 +256,7 @@ export function JamScheduleOverlapSection({
             ))}
           </div>
         </div>
-        <p className="mt-2 text-sm text-mute">
-          {data.participant_count < 2
-            ? t.schedule.needMorePeople
-            : fullCells > 0
-              ? t.schedule.fullSummary.replace('{n}', String(fullCells))
-              : t.schedule.noFullOverlap}
-        </p>
-      </div>
+      </CollapseSection>
     </section>
   )
 }
