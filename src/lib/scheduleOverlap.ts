@@ -1,5 +1,87 @@
-import { AVAIL_DAYS, AVAIL_HOUR_END, AVAIL_HOUR_START } from '@/types'
+import {
+  AVAIL_DAYS,
+  AVAIL_HOUR_END,
+  AVAIL_HOUR_START,
+  type AvailabilityDateOverrideMode,
+} from '@/types'
 import { slotKey } from '@/lib/utils'
+
+export type DateOverrideMap = Map<string, AvailabilityDateOverrideMode>
+
+/** Local calendar date as YYYY-MM-DD. */
+export function toIsoDateLocal(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** Mon=0…Sun=6 ISO dates for the week containing `anchor` (local). */
+export function isoWeekDates(anchor = new Date()): string[] {
+  const dow = (anchor.getDay() + 6) % 7
+  const monday = new Date(
+    anchor.getFullYear(),
+    anchor.getMonth(),
+    anchor.getDate() - dow,
+  )
+  return Array.from({ length: AVAIL_DAYS }, (_, i) => {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    return toIsoDateLocal(d)
+  })
+}
+
+/** Hours shown for a calendar day after applying date overrides. */
+export function hoursForCalendarDate(
+  dow: number,
+  isoDate: string,
+  weeklyByDow: number[],
+  overrides: DateOverrideMap,
+): number {
+  const mode = overrides.get(isoDate)
+  if (mode === 'off') return 0
+  if (mode === 'full') return AVAIL_HOUR_END - AVAIL_HOUR_START + 1
+  return weeklyByDow[dow] ?? 0
+}
+
+/**
+ * Weekly slot keys with current-week date overrides applied:
+ * `full` → all 24h that weekday; `off` → none. Other weeks ignore overrides.
+ */
+export function applyWeekOverridesToSlots(
+  weeklyKeys: Iterable<string>,
+  overrides: DateOverrideMap,
+  weekIsoByDow: string[],
+): Set<string> {
+  const next = new Set(weeklyKeys)
+  for (let dow = 0; dow < AVAIL_DAYS; dow++) {
+    const iso = weekIsoByDow[dow]
+    if (!iso) continue
+    const mode = overrides.get(iso)
+    if (mode === 'off') {
+      for (let h = AVAIL_HOUR_START; h <= AVAIL_HOUR_END; h++) {
+        next.delete(slotKey(dow, h))
+      }
+    } else if (mode === 'full') {
+      for (let h = AVAIL_HOUR_START; h <= AVAIL_HOUR_END; h++) {
+        next.add(slotKey(dow, h))
+      }
+    }
+  }
+  return next
+}
+
+/** Toggle date override: clear existing, else off if weekly has hours, else full. */
+export function nextDateOverride(
+  isoDate: string,
+  dow: number,
+  weeklyByDow: number[],
+  overrides: DateOverrideMap,
+): AvailabilityDateOverrideMode | null {
+  if (overrides.has(isoDate)) return null
+  if ((weeklyByDow[dow] ?? 0) > 0) return 'off'
+  return 'full'
+}
 
 export interface OverlapParticipant {
   user_id: string
@@ -74,6 +156,8 @@ export function hoursCountByDayFromKeys(keys: Iterable<string>): number[] {
 export interface CalendarDay {
   date: Date
   key: string
+  /** YYYY-MM-DD for override storage. */
+  isoDate: string
   dayOfMonth: number
   /** ISO weekday Mon=0 … Sun=6 (matches availability_slots). */
   dow: number
@@ -81,14 +165,16 @@ export interface CalendarDay {
   isToday: boolean
   fullOverlapHours: number
   isJamWindow: boolean
+  overrideMode: AvailabilityDateOverrideMode | null
 }
 
-/** Build a month grid (Mon-first) with overlap hints per weekday. */
+/** Build a month grid (Mon-first) with overlap hints per weekday / date. */
 export function buildMonthCalendar(
   anchor: Date,
   fullHoursByDow: number[],
   jamWindow: { start: Date; end: Date } | null,
   today = new Date(),
+  overrides: DateOverrideMap = new Map(),
 ): CalendarDay[] {
   const year = anchor.getFullYear()
   const month = anchor.getMonth()
@@ -102,6 +188,7 @@ export function buildMonthCalendar(
     d.setDate(start.getDate() + i)
     const dow = (d.getDay() + 6) % 7
     const inMonth = d.getMonth() === month
+    const isoDate = toIsoDateLocal(d)
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
     const isToday =
       d.getFullYear() === today.getFullYear() &&
@@ -126,15 +213,20 @@ export function buildMonthCalendar(
       )
       isJamWindow = noon.getTime() >= s.getTime() && noon.getTime() <= e.getTime()
     }
+    const overrideMode = overrides.get(isoDate) ?? null
     days.push({
       date: d,
       key,
+      isoDate,
       dayOfMonth: d.getDate(),
       dow,
       inMonth,
       isToday,
-      fullOverlapHours: inMonth ? fullHoursByDow[dow] ?? 0 : 0,
+      fullOverlapHours: inMonth
+        ? hoursForCalendarDate(dow, isoDate, fullHoursByDow, overrides)
+        : 0,
       isJamWindow,
+      overrideMode: inMonth ? overrideMode : null,
     })
   }
   return days

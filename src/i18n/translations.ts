@@ -58,15 +58,18 @@ const uk = {
   },
   availability: {
     title: 'Тижнева доступність',
-    hint: 'Календар і сітка годин — розгорніть потрібне. Повторюється щотижня.',
+    hint: 'Календар і сітка годин — розгорніть потрібне. Тиждень повторюється; окремі дати можна вимкнути або додати на цілий день.',
     save: 'Зберегти розклад',
     saved: 'Розклад збережено',
     clear: 'Очистити',
     calendarTitle: 'Календар',
     calendarSummary: '{days} дн. · {hours} год',
-    calendarHint: 'Зафарбовані дні тижня, у яких є вибрані години.',
+    calendarHint:
+      'Тап по дню: вимкнути навіть якщо є в тижневому розкладі, або додати день (24 год). Бірюза — доданий день.',
     hoursTitle: 'Години',
     hoursSummary: 'Обрано слотів: {n}',
+    hoursWeekHint:
+      'Поточний тиждень: додані дати показують усі 24 год лише тут і лише коли цей тиждень актуальний.',
   },
   days: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
   home: {
@@ -347,15 +350,18 @@ const en = {
   },
   availability: {
     title: 'Weekly availability',
-    hint: 'Calendar and hour grid — expand what you need. Repeats every week.',
+    hint: 'Calendar and hour grid — expand what you need. The week repeats; you can turn off or add specific dates as full days.',
     save: 'Save schedule',
     saved: 'Schedule saved',
     clear: 'Clear',
     calendarTitle: 'Calendar',
     calendarSummary: '{days} days · {hours} hours',
-    calendarHint: 'Days are shaded when that weekday has selected hours.',
+    calendarHint:
+      'Tap a day to turn it off even if the weekly grid has hours, or add a full day (24h). Teal marks an added day.',
     hoursTitle: 'Hours',
     hoursSummary: 'Selected slots: {n}',
+    hoursWeekHint:
+      'Current week: added dates show all 24 hours here only while that week is current.',
   },
   days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   home: {

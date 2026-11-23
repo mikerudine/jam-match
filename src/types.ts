@@ -84,6 +84,15 @@ export interface AvailabilitySlot {
   hour: number
 }
 
+/** Calendar-day override on top of the weekly grid. */
+export type AvailabilityDateOverrideMode = 'full' | 'off'
+
+export interface AvailabilityDateOverride {
+  user_id: string
+  on_date: string
+  mode: AvailabilityDateOverrideMode
+}
+
 export interface JamRequest {
   id: string
   creator_id: string
