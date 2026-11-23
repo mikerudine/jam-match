@@ -16,7 +16,10 @@ import {
   updateLocation,
   type JamLocationList,
 } from '@/api/locations'
-import { fetchJamScheduleOverlap } from '@/api/schedule'
+import {
+  fetchJamScheduleOverlap,
+  fetchSuggestedJamWindow,
+} from '@/api/schedule'
 import {
   addJamSong,
   deleteJamSong,
@@ -34,6 +37,7 @@ import { Loading } from '@/components/Loading'
 import { LocationSection } from '@/components/LocationSection'
 import { PublicJamView } from '@/components/PublicJamView'
 import { SongListSection } from '@/components/SongListSection'
+import { formatJamWhenLabel } from '@/lib/jamWhen'
 import type { JamScheduleOverlap } from '@/lib/scheduleOverlap'
 import { useLocale } from '@/i18n/LocaleContext'
 import { telegramAppName, telegramBotUsername } from '@/lib/config'
@@ -46,6 +50,7 @@ import {
   isJamOpenForJoin,
   type JamJoinRequest,
   type PublicJam,
+  type SuggestedJamWindow,
 } from '@/types'
 
 function isNoAccessError(err: unknown): boolean {
@@ -64,7 +69,7 @@ function isNoAccessError(err: unknown): boolean {
 export function JamDetailPage() {
   const { jamId } = useParams<{ jamId: string }>()
   const { session } = useAuth()
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [noAccess, setNoAccess] = useState(false)
@@ -75,6 +80,8 @@ export function JamDetailPage() {
   const [locationList, setLocationList] = useState<JamLocationList | null>(null)
   const [scheduleOverlap, setScheduleOverlap] =
     useState<JamScheduleOverlap | null>(null)
+  const [suggestedWhen, setSuggestedWhen] =
+    useState<SuggestedJamWindow | null>(null)
   const [feedbackDone, setFeedbackDone] = useState(false)
   const [rating, setRating] = useState(4)
   const [showedUp, setShowedUp] = useState(true)
@@ -119,6 +126,7 @@ export function JamDetailPage() {
     setSongList(null)
     setLocationList(null)
     setScheduleOverlap(null)
+    setSuggestedWhen(null)
   }
 
   useEffect(() => {
@@ -148,6 +156,14 @@ export function JamDetailPage() {
         } catch {
           schedule = null
         }
+        let suggested: SuggestedJamWindow | null = null
+        if (!d.jam.window_start) {
+          try {
+            suggested = await fetchSuggestedJamWindow(jamId)
+          } catch {
+            suggested = null
+          }
+        }
         const join =
           d.jam.creator_id === session.user.id
             ? null
@@ -159,6 +175,7 @@ export function JamDetailPage() {
           setSongList(songs)
           setLocationList(locations)
           setScheduleOverlap(schedule)
+          setSuggestedWhen(suggested)
           setMyJoin(join)
           setNoAccess(false)
         }
@@ -390,14 +407,23 @@ export function JamDetailPage() {
         </h1>
         <p className="mt-2 text-sm text-mute">
           {t.jam.time}:{' '}
-          {jam.window_start && jam.window_end
-            ? `${new Date(jam.window_start).toLocaleString()} – ${new Date(
-                jam.window_end,
-              ).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}`
-            : t.home.noDate}
+          {formatJamWhenLabel(
+            {
+              window_start: jam.window_start,
+              window_end: jam.window_end,
+              suggested_window_start: suggestedWhen?.window_start,
+              suggested_window_end: suggestedWhen?.window_end,
+              suggested_match_count: suggestedWhen?.match_count,
+              suggested_participant_count: suggestedWhen?.participant_count,
+              suggested_matched_names: suggestedWhen?.matched_names,
+            },
+            locale,
+            {
+              noDate: t.home.noDate,
+              suggestedSuffix: t.home.suggestedDate,
+              partialSuffix: t.home.suggestedPartial,
+            },
+          )}
         </p>
         <p className="text-sm text-mute">
           {t.jam.place}: {jam.area || '—'}

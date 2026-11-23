@@ -156,6 +156,21 @@ export interface PublicJam {
   seats: PublicJamSeat[]
   filled_count: number
   open_count: number
+  /** Present when window is unset — nearest overlap from schedules. */
+  suggested_window_start?: string | null
+  suggested_window_end?: string | null
+  suggested_match_count?: number | null
+  suggested_participant_count?: number | null
+  suggested_matched_names?: string[] | null
+}
+
+export interface SuggestedJamWindow {
+  window_start: string
+  window_end: string
+  match_count: number
+  participant_count: number
+  matched_user_ids?: string[]
+  matched_names?: string[]
 }
 
 /** Explicit deny payload from get_public_jam for friends-only jams. */

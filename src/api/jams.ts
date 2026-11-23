@@ -141,6 +141,11 @@ export interface BrowseJamRow extends JamRequest {
   covers_my_availability: boolean
   is_friend_creator: boolean
   i_am_participant: boolean
+  suggested_window_start?: string | null
+  suggested_window_end?: string | null
+  suggested_match_count?: number | null
+  suggested_participant_count?: number | null
+  suggested_matched_names?: string[] | null
 }
 
 export async function listBrowseJams(): Promise<BrowseJamRow[]> {

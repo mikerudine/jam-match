@@ -1,4 +1,5 @@
 import { useLocale } from '@/i18n/LocaleContext'
+import { formatJamWhenLabel } from '@/lib/jamWhen'
 import { seatRoleLabel } from '@/lib/utils'
 import type { PublicJam } from '@/types'
 
@@ -11,7 +12,7 @@ export interface PublicJamViewProps {
  * initiator name — never base_name, contacts, or member profiles.
  */
 export function PublicJamView({ jam }: PublicJamViewProps) {
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
 
   return (
     <div className="space-y-5">
@@ -24,14 +25,11 @@ export function PublicJamView({ jam }: PublicJamViewProps) {
         <h1 className="font-display mt-1 text-2xl">{t.formats[jam.format]}</h1>
         <p className="mt-2 text-sm text-mute">
           {t.jam.time}:{' '}
-          {jam.window_start && jam.window_end
-            ? `${new Date(jam.window_start).toLocaleString()} – ${new Date(
-                jam.window_end,
-              ).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}`
-            : '—'}
+          {formatJamWhenLabel(jam, locale, {
+            noDate: t.home.noDate,
+            suggestedSuffix: t.home.suggestedDate,
+            partialSuffix: t.home.suggestedPartial,
+          })}
         </p>
         <p className="text-sm text-mute">
           {t.jam.area}: {jam.area || '—'}

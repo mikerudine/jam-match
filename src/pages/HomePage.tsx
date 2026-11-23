@@ -7,9 +7,11 @@ import {
   type BrowseJamRow,
 } from '@/api/jams'
 import { fetchProfile } from '@/api/profile'
+import { fetchSuggestedJamWindow } from '@/api/schedule'
 import { useAuth } from '@/auth/AuthContext'
 import { Loading } from '@/components/Loading'
 import { useLocale } from '@/i18n/LocaleContext'
+import { formatJamWhenLabel } from '@/lib/jamWhen'
 import { cn } from '@/lib/utils'
 import {
   isJamArchived,
@@ -17,6 +19,7 @@ import {
   type JamRequest,
   type JamSeat,
   type Profile,
+  type SuggestedJamWindow,
 } from '@/types'
 
 type HomeTab = 'mine' | 'friends' | 'matches' | 'all'
@@ -24,11 +27,14 @@ type MyJamRow = JamRequest & { seats: JamSeat[] }
 
 export function HomePage() {
   const { session } = useAuth()
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<HomeTab>('mine')
   const [myJams, setMyJams] = useState<MyJamRow[]>([])
   const [browse, setBrowse] = useState<BrowseJamRow[]>([])
+  const [mySuggestions, setMySuggestions] = useState<
+    Map<string, SuggestedJamWindow>
+  >(() => new Map())
   const [profile, setProfile] = useState<Profile | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [matching, setMatching] = useState(false)
@@ -40,9 +46,25 @@ export function HomePage() {
       listMyJams(session.user.id),
       listBrowseJams(),
     ])
+    const undated = mine.filter(
+      (j) => !j.window_start && !isJamArchived(j),
+    )
+    const sugEntries = await Promise.all(
+      undated.map(async (j) => {
+        try {
+          const s = await fetchSuggestedJamWindow(j.id)
+          return s ? ([j.id, s] as const) : null
+        } catch {
+          return null
+        }
+      }),
+    )
     setProfile(p)
     setMyJams(mine)
     setBrowse(feed)
+    setMySuggestions(
+      new Map(sugEntries.filter((e): e is [string, SuggestedJamWindow] => !!e)),
+    )
   }, [session])
 
   useEffect(() => {
@@ -87,6 +109,20 @@ export function HomePage() {
   )
 
   const allJams = useMemo(() => browse, [browse])
+
+  const browseById = useMemo(
+    () => new Map(browse.map((j) => [j.id, j])),
+    [browse],
+  )
+
+  const whenStrings = useMemo(
+    () => ({
+      noDate: t.home.noDate,
+      suggestedSuffix: t.home.suggestedDate,
+      partialSuffix: t.home.suggestedPartial,
+    }),
+    [t.home.noDate, t.home.suggestedDate, t.home.suggestedPartial],
+  )
 
   async function refreshMatching() {
     setMatching(true)
@@ -172,24 +208,44 @@ export function HomePage() {
         <JamList
           empty={t.home.emptyMine}
           statusLabel={statusLabel}
-          items={myOpen.map((jam) => ({
-            id: jam.id,
-            title: jamDisplayTitle(jam, t.formats),
-            when: jam.window_start
-              ? new Date(jam.window_start).toLocaleString()
-              : t.home.noDate,
-            area: jam.area,
-            status: jam.status,
-            meta:
-              jam.seats
-                .map((s) =>
-                  s.role_label?.trim()
-                    ? s.role_label.trim()
-                    : t.instruments[s.role],
-                )
-                .join(' · ') || t.home.lineupOpen,
-            openSeats: jam.seats.filter((s) => s.status !== 'filled').length,
-          }))}
+          items={myOpen.map((jam) => {
+            const feed = browseById.get(jam.id)
+            const sug = mySuggestions.get(jam.id)
+            return {
+              id: jam.id,
+              title: jamDisplayTitle(jam, t.formats),
+              when: formatJamWhenLabel(
+                {
+                  window_start: jam.window_start,
+                  window_end: jam.window_end,
+                  suggested_window_start:
+                    sug?.window_start ?? feed?.suggested_window_start,
+                  suggested_window_end:
+                    sug?.window_end ?? feed?.suggested_window_end,
+                  suggested_match_count:
+                    sug?.match_count ?? feed?.suggested_match_count,
+                  suggested_participant_count:
+                    sug?.participant_count ??
+                    feed?.suggested_participant_count,
+                  suggested_matched_names:
+                    sug?.matched_names ?? feed?.suggested_matched_names,
+                },
+                locale,
+                whenStrings,
+              ),
+              area: jam.area,
+              status: jam.status,
+              meta:
+                jam.seats
+                  .map((s) =>
+                    s.role_label?.trim()
+                      ? s.role_label.trim()
+                      : t.instruments[s.role],
+                  )
+                  .join(' · ') || t.home.lineupOpen,
+              openSeats: jam.seats.filter((s) => s.status !== 'filled').length,
+            }
+          })}
           openSeatsLabel={t.home.openSeats}
           seatsLabel={t.home.seats}
         />
@@ -201,6 +257,8 @@ export function HomePage() {
           statusLabel={statusLabel}
           rows={friendsJams}
           t={t}
+          locale={locale}
+          whenStrings={whenStrings}
         />
       )}
 
@@ -210,6 +268,8 @@ export function HomePage() {
           statusLabel={statusLabel}
           rows={matchJams}
           t={t}
+          locale={locale}
+          whenStrings={whenStrings}
         />
       )}
 
@@ -219,6 +279,8 @@ export function HomePage() {
           statusLabel={statusLabel}
           rows={allJams}
           t={t}
+          locale={locale}
+          whenStrings={whenStrings}
         />
       )}
 
@@ -236,11 +298,19 @@ function BrowseList({
   empty,
   statusLabel,
   t,
+  locale,
+  whenStrings,
 }: {
   rows: BrowseJamRow[]
   empty: string
   statusLabel: Record<string, string>
   t: ReturnType<typeof useLocale>['t']
+  locale: string
+  whenStrings: {
+    noDate: string
+    suggestedSuffix: string
+    partialSuffix: string
+  }
 }) {
   return (
     <JamList
@@ -250,9 +320,7 @@ function BrowseList({
       items={rows.map((jam) => ({
         id: jam.id,
         title: jamDisplayTitle(jam, t.formats),
-        when: jam.window_start
-          ? new Date(jam.window_start).toLocaleString()
-          : t.home.noDate,
+        when: formatJamWhenLabel(jam, locale, whenStrings),
         area: jam.area,
         status: jam.status,
         meta: [
