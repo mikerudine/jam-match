@@ -1,9 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createJam, runMatching } from '@/api/jams'
+import { addJamLocation } from '@/api/locations'
 import { fetchProfile } from '@/api/profile'
 import { useAuth } from '@/auth/AuthContext'
 import { ChipSelect } from '@/components/ChipSelect'
+import {
+  LocationDraftPicker,
+  type LocationDraftItem,
+} from '@/components/LocationDraftPicker'
 import { Loading } from '@/components/Loading'
 import { useLocale } from '@/i18n/LocaleContext'
 import {
@@ -37,6 +42,7 @@ export function NewJamPage() {
   const [area, setArea] = useState('')
   const [baseName, setBaseName] = useState('')
   const [ttl, setTtl] = useState(3)
+  const [locationDrafts, setLocationDrafts] = useState<LocationDraftItem[]>([])
 
   useEffect(() => {
     if (!session) return
@@ -94,6 +100,16 @@ export function NewJamPage() {
         creator_role: creatorRole,
         wanted_roles: wanted,
       })
+      for (const item of locationDrafts) {
+        if (item.kind === 'existing') {
+          await addJamLocation({
+            jam_id: jamId,
+            location_id: item.location.id,
+          })
+        } else {
+          await addJamLocation({ jam_id: jamId, draft: item.draft })
+        }
+      }
       if (window_start && wanted.length > 0) {
         await runMatching(jamId)
       }
@@ -296,6 +312,12 @@ export function NewJamPage() {
           </label>
         </>
       )}
+
+      <LocationDraftPicker
+        value={locationDrafts}
+        onChange={setLocationDrafts}
+        disabled={busy}
+      />
 
       <button
         type="submit"

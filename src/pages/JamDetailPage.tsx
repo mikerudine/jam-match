@@ -9,6 +9,14 @@ import {
   submitFeedback,
 } from '@/api/jams'
 import {
+  addJamLocation,
+  listJamLocations,
+  removeJamLocationProposal,
+  setLocationVote,
+  updateLocation,
+  type JamLocationList,
+} from '@/api/locations'
+import {
   addJamSong,
   deleteJamSong,
   listJamSongs,
@@ -21,10 +29,12 @@ import { EditJamSection } from '@/components/EditJamSection'
 import { JoinRequestForm } from '@/components/JoinRequestForm'
 import { JoinRequestsPanel } from '@/components/JoinRequestsPanel'
 import { Loading } from '@/components/Loading'
+import { LocationSection } from '@/components/LocationSection'
 import { PublicJamView } from '@/components/PublicJamView'
 import { SongListSection } from '@/components/SongListSection'
 import { useLocale } from '@/i18n/LocaleContext'
 import { telegramAppName, telegramBotUsername } from '@/lib/config'
+import type { VoteValue as LocationVoteValue } from '@/lib/locationList'
 import type { VoteValue } from '@/lib/songList'
 import { buildJamTelegramLink } from '@/lib/telegramDeepLink'
 import { copyTextToClipboard, shareJamLink } from '@/lib/telegramShare'
@@ -59,6 +69,7 @@ export function JamDetailPage() {
     ReturnType<typeof getJamDetail>
   > | null>(null)
   const [songList, setSongList] = useState<JamSongList | null>(null)
+  const [locationList, setLocationList] = useState<JamLocationList | null>(null)
   const [feedbackDone, setFeedbackDone] = useState(false)
   const [rating, setRating] = useState(4)
   const [showedUp, setShowedUp] = useState(true)
@@ -66,6 +77,7 @@ export function JamDetailPage() {
   const [shareBusy, setShareBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [songsBusy, setSongsBusy] = useState(false)
+  const [locationsBusy, setLocationsBusy] = useState(false)
   const [myJoin, setMyJoin] = useState<JamJoinRequest | null>(null)
   const [joinRefresh, setJoinRefresh] = useState(0)
   const [publicJam, setPublicJam] = useState<PublicJam | null>(null)
@@ -75,6 +87,11 @@ export function JamDetailPage() {
     setSongList(list)
   }
 
+  async function refreshLocations(id: string, userId: string) {
+    const list = await listJamLocations(id, userId)
+    setLocationList(list)
+  }
+
   async function loadPublicPreview(id: string, userId: string) {
     const pub = await getPublicJam(id)
     const join = await getMyJoinRequest(id, userId)
@@ -82,6 +99,7 @@ export function JamDetailPage() {
     setMyJoin(join)
     setDetail(null)
     setSongList(null)
+    setLocationList(null)
     setNoAccess(!pub)
   }
 
@@ -94,11 +112,17 @@ export function JamDetailPage() {
         const d = await getJamDetail(jamId)
         const done = await hasSubmittedFeedback(jamId, session.user.id)
         let songs: JamSongList | null = null
+        let locations: JamLocationList | null = null
         try {
           songs = await listJamSongs(jamId, session.user.id)
         } catch {
           // Non-participants get nothing from RLS; leave song list hidden.
           songs = null
+        }
+        try {
+          locations = await listJamLocations(jamId, session.user.id)
+        } catch {
+          locations = null
         }
         const join =
           d.jam.creator_id === session.user.id
@@ -109,6 +133,7 @@ export function JamDetailPage() {
           setPublicJam(null)
           setFeedbackDone(done)
           setSongList(songs)
+          setLocationList(locations)
           setMyJoin(join)
           setNoAccess(false)
         }
@@ -122,6 +147,7 @@ export function JamDetailPage() {
               setNoAccess(true)
               setPublicJam(null)
               setSongList(null)
+              setLocationList(null)
             }
           } else {
             setError(err instanceof Error ? err.message : t.common.error)
@@ -209,6 +235,17 @@ export function JamDetailPage() {
       await refreshSongs(jamId, session.user.id)
     } finally {
       setSongsBusy(false)
+    }
+  }
+
+  async function withLocations(action: () => Promise<void>) {
+    if (!jamId || !session) return
+    setLocationsBusy(true)
+    try {
+      await action()
+      await refreshLocations(jamId, session.user.id)
+    } finally {
+      setLocationsBusy(false)
     }
   }
 
@@ -414,6 +451,43 @@ export function JamDetailPage() {
           })}
         </ul>
       </section>
+
+      {locationList && session ? (
+        <LocationSection
+          userId={session.user.id}
+          items={locationList.items}
+          proposals={locationList.proposals}
+          busy={locationsBusy}
+          onProposeExisting={async (locationId) => {
+            await withLocations(async () => {
+              await addJamLocation({
+                jam_id: jam.id,
+                location_id: locationId,
+              })
+            })
+          }}
+          onProposeNew={async (draft) => {
+            await withLocations(async () => {
+              await addJamLocation({ jam_id: jam.id, draft })
+            })
+          }}
+          onUpdate={async (input) => {
+            await withLocations(async () => {
+              await updateLocation(input)
+            })
+          }}
+          onRemove={async (proposalId) => {
+            await withLocations(async () => {
+              await removeJamLocationProposal(proposalId)
+            })
+          }}
+          onVote={async (proposalId, value: LocationVoteValue | null) => {
+            await withLocations(async () => {
+              await setLocationVote({ proposal_id: proposalId, value })
+            })
+          }}
+        />
+      ) : null}
 
       {songList && session ? (
         <SongListSection
