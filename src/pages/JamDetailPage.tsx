@@ -16,6 +16,7 @@ import {
   updateLocation,
   type JamLocationList,
 } from '@/api/locations'
+import { fetchJamScheduleOverlap } from '@/api/schedule'
 import {
   addJamSong,
   deleteJamSong,
@@ -28,10 +29,12 @@ import { useAuth } from '@/auth/AuthContext'
 import { EditJamSection } from '@/components/EditJamSection'
 import { JoinRequestForm } from '@/components/JoinRequestForm'
 import { JoinRequestsPanel } from '@/components/JoinRequestsPanel'
+import { JamScheduleOverlapSection } from '@/components/JamScheduleOverlap'
 import { Loading } from '@/components/Loading'
 import { LocationSection } from '@/components/LocationSection'
 import { PublicJamView } from '@/components/PublicJamView'
 import { SongListSection } from '@/components/SongListSection'
+import type { JamScheduleOverlap } from '@/lib/scheduleOverlap'
 import { useLocale } from '@/i18n/LocaleContext'
 import { telegramAppName, telegramBotUsername } from '@/lib/config'
 import type { VoteValue as LocationVoteValue } from '@/lib/locationList'
@@ -70,6 +73,8 @@ export function JamDetailPage() {
   > | null>(null)
   const [songList, setSongList] = useState<JamSongList | null>(null)
   const [locationList, setLocationList] = useState<JamLocationList | null>(null)
+  const [scheduleOverlap, setScheduleOverlap] =
+    useState<JamScheduleOverlap | null>(null)
   const [feedbackDone, setFeedbackDone] = useState(false)
   const [rating, setRating] = useState(4)
   const [showedUp, setShowedUp] = useState(true)
@@ -113,6 +118,7 @@ export function JamDetailPage() {
     setDetail(null)
     setSongList(null)
     setLocationList(null)
+    setScheduleOverlap(null)
   }
 
   useEffect(() => {
@@ -125,6 +131,7 @@ export function JamDetailPage() {
         const done = await hasSubmittedFeedback(jamId, session.user.id)
         let songs: JamSongList | null = null
         let locations: JamLocationList | null = null
+        let schedule: JamScheduleOverlap | null = null
         try {
           songs = await listJamSongs(jamId, session.user.id)
         } catch {
@@ -136,6 +143,11 @@ export function JamDetailPage() {
         } catch {
           locations = null
         }
+        try {
+          schedule = await fetchJamScheduleOverlap(jamId)
+        } catch {
+          schedule = null
+        }
         const join =
           d.jam.creator_id === session.user.id
             ? null
@@ -146,6 +158,7 @@ export function JamDetailPage() {
           setFeedbackDone(done)
           setSongList(songs)
           setLocationList(locations)
+          setScheduleOverlap(schedule)
           setMyJoin(join)
           setNoAccess(false)
         }
@@ -160,6 +173,7 @@ export function JamDetailPage() {
               setPublicJam(null)
               setSongList(null)
               setLocationList(null)
+              setScheduleOverlap(null)
             }
           } else {
             setError(err instanceof Error ? err.message : t.common.error)
@@ -428,6 +442,14 @@ export function JamDetailPage() {
           jam={jam}
           existing={myJoin}
           onSubmitted={refreshDetail}
+        />
+      ) : null}
+
+      {scheduleOverlap ? (
+        <JamScheduleOverlapSection
+          data={scheduleOverlap}
+          windowStart={jam.window_start}
+          windowEnd={jam.window_end}
         />
       ) : null}
 
