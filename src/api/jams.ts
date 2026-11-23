@@ -224,9 +224,8 @@ export async function listInbox(userId: string): Promise<
     .from('jam_invites')
     .select('*')
     .eq('invitee_id', userId)
-    .eq('status', 'pending')
-    .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
+    .limit(80)
   if (error) throw error
   if (!invites?.length) return []
 
