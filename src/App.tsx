@@ -36,6 +36,7 @@ import { SongListPreviewPage } from '@/pages/SongListPreviewPage'
 function StartParamRedirect() {
   const { session } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const done = useRef(false)
 
   useEffect(() => {
@@ -45,8 +46,11 @@ function StartParamRedirect() {
       decodeJamStartParam(readTelegramStartParam())
     if (!jamId) return
     done.current = true
-    navigate(`/jams/${jamId}`, { replace: true })
-  }, [session, navigate])
+    const target = `/jams/${jamId}`
+    if (location.pathname !== target) {
+      navigate(target, { replace: true })
+    }
+  }, [session, navigate, location.pathname])
 
   return null
 }

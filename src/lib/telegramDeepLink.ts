@@ -167,6 +167,28 @@ export function readTelegramStartParam(
 let pendingJamIdFromStartParam: string | null = null
 let pendingFriendIdFromStartParam: string | null = null
 
+const PENDING_JAM_STORAGE_KEY = 'jam_match_pending_jam'
+const PENDING_FRIEND_STORAGE_KEY = 'jam_match_pending_friend'
+
+function writePending(key: string, id: string | null): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return
+    if (id) sessionStorage.setItem(key, id)
+    else sessionStorage.removeItem(key)
+  } catch {
+    // private mode / denied
+  }
+}
+
+function readPending(key: string): string | null {
+  try {
+    if (typeof sessionStorage === 'undefined') return null
+    return sessionStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
 /** Capture jam / friend ids from start_param once at startup (before HashRouter). */
 export function capturePendingJamFromStartParam(
   win: Pick<Window, 'Telegram' | 'location'> = window,
@@ -175,10 +197,14 @@ export function capturePendingJamFromStartParam(
   const jamId = decodeJamStartParam(param)
   if (jamId) {
     pendingJamIdFromStartParam = jamId
+    writePending(PENDING_JAM_STORAGE_KEY, jamId)
     return jamId
   }
   const friendId = decodeFriendStartParam(param)
-  if (friendId) pendingFriendIdFromStartParam = friendId
+  if (friendId) {
+    pendingFriendIdFromStartParam = friendId
+    writePending(PENDING_FRIEND_STORAGE_KEY, friendId)
+  }
   return null
 }
 
@@ -187,34 +213,43 @@ export function capturePendingFriendFromStartParam(
   win: Pick<Window, 'Telegram' | 'location'> = window,
 ): string | null {
   const friendId = decodeFriendStartParam(readTelegramStartParam(win))
-  if (friendId) pendingFriendIdFromStartParam = friendId
+  if (friendId) {
+    pendingFriendIdFromStartParam = friendId
+    writePending(PENDING_FRIEND_STORAGE_KEY, friendId)
+  }
   return friendId
 }
 
 export function peekPendingJamFromStartParam(): string | null {
-  return pendingJamIdFromStartParam
+  return pendingJamIdFromStartParam ?? readPending(PENDING_JAM_STORAGE_KEY)
 }
 
 /** Consume pending jam id so navigation runs once. */
 export function takePendingJamFromStartParam(): string | null {
-  const id = pendingJamIdFromStartParam
+  const id =
+    pendingJamIdFromStartParam ?? readPending(PENDING_JAM_STORAGE_KEY)
   pendingJamIdFromStartParam = null
+  writePending(PENDING_JAM_STORAGE_KEY, null)
   return id
 }
 
 export function takePendingFriendFromStartParam(): string | null {
-  const id = pendingFriendIdFromStartParam
+  const id =
+    pendingFriendIdFromStartParam ?? readPending(PENDING_FRIEND_STORAGE_KEY)
   pendingFriendIdFromStartParam = null
+  writePending(PENDING_FRIEND_STORAGE_KEY, null)
   return id
 }
 
 /** Test helper. */
 export function setPendingJamFromStartParamForTests(jamId: string | null): void {
   pendingJamIdFromStartParam = jamId
+  writePending(PENDING_JAM_STORAGE_KEY, jamId)
 }
 
 export function setPendingFriendFromStartParamForTests(
   profileId: string | null,
 ): void {
   pendingFriendIdFromStartParam = profileId
+  writePending(PENDING_FRIEND_STORAGE_KEY, profileId)
 }

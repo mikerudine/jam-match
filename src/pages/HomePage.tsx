@@ -41,30 +41,53 @@ export function HomePage() {
 
   const reload = useCallback(async () => {
     if (!session) return
+    // Browse is best-effort: a feed RPC failure must not blank the whole home
+    // (or block “open jam” deep links that land on `/` first).
     const [p, mine, feed] = await Promise.all([
       fetchProfile(session.user.id),
       listMyJams(session.user.id),
-      listBrowseJams(),
+      listBrowseJams().catch(() => [] as BrowseJamRow[]),
     ])
-    const undated = mine.filter(
+    const undatedMine = mine.filter(
       (j) => !j.window_start && !isJamArchived(j),
     )
+    const undatedBrowse = feed.filter((j) => !j.window_start)
+    const undatedIds = [
+      ...new Set([
+        ...undatedMine.map((j) => j.id),
+        ...undatedBrowse.map((j) => j.id),
+      ]),
+    ]
     const sugEntries = await Promise.all(
-      undated.map(async (j) => {
+      undatedIds.map(async (id) => {
         try {
-          const s = await fetchSuggestedJamWindow(j.id)
-          return s ? ([j.id, s] as const) : null
+          const s = await fetchSuggestedJamWindow(id)
+          return s ? ([id, s] as const) : null
         } catch {
           return null
         }
       }),
     )
+    const suggestions = new Map(
+      sugEntries.filter((e): e is [string, SuggestedJamWindow] => !!e),
+    )
     setProfile(p)
     setMyJams(mine)
-    setBrowse(feed)
-    setMySuggestions(
-      new Map(sugEntries.filter((e): e is [string, SuggestedJamWindow] => !!e)),
+    setBrowse(
+      feed.map((row) => {
+        const sug = suggestions.get(row.id)
+        if (!sug) return row
+        return {
+          ...row,
+          suggested_window_start: sug.window_start,
+          suggested_window_end: sug.window_end,
+          suggested_match_count: sug.match_count,
+          suggested_participant_count: sug.participant_count,
+          suggested_matched_names: sug.matched_names,
+        }
+      }),
     )
+    setMySuggestions(suggestions)
   }, [session])
 
   useEffect(() => {
