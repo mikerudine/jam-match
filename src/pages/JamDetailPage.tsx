@@ -32,6 +32,7 @@ import { useAuth } from '@/auth/AuthContext'
 import { EditJamSection } from '@/components/EditJamSection'
 import { JoinRequestForm } from '@/components/JoinRequestForm'
 import { JoinRequestsPanel } from '@/components/JoinRequestsPanel'
+import { JamMyAvailabilitySection } from '@/components/JamMyAvailabilitySection'
 import { JamScheduleOverlapSection } from '@/components/JamScheduleOverlap'
 import { Loading } from '@/components/Loading'
 import { LocationSection } from '@/components/LocationSection'
@@ -468,6 +469,27 @@ export function JamDetailPage() {
           jam={jam}
           existing={myJoin}
           onSubmitted={refreshDetail}
+        />
+      ) : null}
+
+      {isMember && jamId && session ? (
+        <JamMyAvailabilitySection
+          jamId={jamId}
+          userId={session.user.id}
+          onSaved={async () => {
+            try {
+              setScheduleOverlap(await fetchJamScheduleOverlap(jamId))
+            } catch {
+              setScheduleOverlap(null)
+            }
+            if (!jam.window_start) {
+              try {
+                setSuggestedWhen(await fetchSuggestedJamWindow(jamId))
+              } catch {
+                setSuggestedWhen(null)
+              }
+            }
+          }}
         />
       ) : null}
 

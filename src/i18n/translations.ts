@@ -200,6 +200,14 @@ const uk = {
     friendsOnlyTitle: 'Тільки для друзів',
     friendsOnlyBody:
       'Цей джем закритий. Попросіть організатора надіслати запрошення в друзі через Telegram.',
+    myAvailabilityTitle: 'Мій розклад для цього джему',
+    myAvailabilityFromProfile:
+      'За замовчуванням — з профілю «Коли можу». Можна змінити лише для цього івенту.',
+    myAvailabilityCustom: 'Для цього джему збережено окремий розклад.',
+    myAvailabilityEdit: 'Змінити для цього івента',
+    myAvailabilitySave: 'Зберегти для джему',
+    myAvailabilityReset: 'Повернути з профілю',
+    myAvailabilitySaved: 'Розклад для джему збережено',
   },
   friends: {
     title: 'Друзі',
@@ -505,6 +513,14 @@ const en = {
     friendsOnlyTitle: 'Friends only',
     friendsOnlyBody:
       'This jam is private. Ask the organizer to send you a friend invite via Telegram.',
+    myAvailabilityTitle: 'My schedule for this jam',
+    myAvailabilityFromProfile:
+      'Defaults to your Availability profile. You can change it for this event only.',
+    myAvailabilityCustom: 'A custom schedule is saved for this jam.',
+    myAvailabilityEdit: 'Change for this event',
+    myAvailabilitySave: 'Save for this jam',
+    myAvailabilityReset: 'Reset to profile',
+    myAvailabilitySaved: 'Jam schedule saved',
   },
   friends: {
     title: 'Friends',
