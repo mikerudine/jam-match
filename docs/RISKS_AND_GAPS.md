@@ -55,7 +55,7 @@
 | Риск | Где | Почему |
 | --- | --- | --- |
 | ~~Утечка участников и ID~~ | `jam.suggest_jam_window` | Закрыто: `can_view_jam_suggest` + IDs/names только участникам (`20261126120000`). |
-| PII в профилях | `jam.profiles` RLS `USING (true)` | Любой залогиненный читает чужие строки, в т.ч. `telegram_id`, handle, reliability; клиент часто делает `select *`. |
+| ~~PII telegram_id~~ | `jam.profiles` | Закрыто: column grants без `telegram_id`/`telegram_write_access`; свой профиль через `get_own_profile`. Handle/@ всё ещё публичен для участников (нужен в джеме). |
 | ~~Глобальный matching~~ | `process_jam_matching` | Закрыто: `null` → exception; нужен participant. |
 | Shared Auth | один Supabase-проект с другими схемами | Email `tg{id}@telegram.jam-match.local`; нет trigger на `auth.users` — профиль только через `ensure_profile` из SPA. |
 | Webhook без JWT | `telegram-webhook` `verify_jwt = false` | Нужно для Telegram; при утечке `TELEGRAM_WEBHOOK_SECRET` — приём произвольных callback. |
@@ -160,7 +160,7 @@
 [x] listInbox / Home — нет process_jam_matching(null); только jam_id + participant (20261126120100)
 [x] Home — suggest только для *моих* undated (не весь browse feed)
 [x] audience invite (link-only) + friends = fr_ link — 20261126130000
-[ ] profiles select * — утекает ли telegram_id (P1)
+[x] profiles — telegram_id / write_access скрыты (column grants + get_own_profile, 20261126140000)
 [ ] jam-notify — видит ли юзер skipped (P1)
 [ ] cancelled / completed undated — есть ли путь в UI (P2)
 [ ] CI lint реально failит? (P2)

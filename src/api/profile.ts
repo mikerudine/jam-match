@@ -26,30 +26,32 @@ export async function ensureProfile(
   return data as Profile
 }
 
-export async function fetchProfile(userId: string): Promise<Profile | null> {
-  const { data, error } = await getSupabase()
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle()
+/** Own profile including telegram_id (hidden from table SELECT for others). */
+export async function fetchProfile(_userId?: string): Promise<Profile | null> {
+  const { data, error } = await getSupabase().rpc('get_own_profile')
   if (error) throw error
-  return data as Profile | null
+  return (data as Profile | null) ?? null
 }
 
 export async function upsertProfile(
   profile: Partial<Profile> & { id: string; display_name: string },
 ): Promise<Profile> {
-  const { data, error } = await getSupabase()
+  const {
+    telegram_id: _tid,
+    telegram_write_access: _twa,
+    ...safe
+  } = profile
+  const { error } = await getSupabase()
     .from('profiles')
     .upsert(
       {
-        ...profile,
+        ...safe,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'id' },
     )
-    .select('*')
-    .single()
   if (error) throw error
-  return data as Profile
+  const mine = await fetchProfile(profile.id)
+  if (!mine) throw new Error('profile missing after upsert')
+  return mine
 }
