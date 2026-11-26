@@ -4,6 +4,8 @@ Mobile-first SPA (Vite + React 19 + TS) for jam/rehearsal matching. Backend: Sup
 
 **Core entities:** Profile · Event (jam) · Location · Friendship (Telegram deep-link `fr_<hex>`; jam `audience` open|friends).
 
+**Risks / gaps:** [`docs/RISKS_AND_GAPS.md`](docs/RISKS_AND_GAPS.md) — bottlenecks, security/product holes, P0–P2 checklist.
+
 ## Entry Points
 
 | Path | Role |

@@ -80,9 +80,10 @@ export async function updateJam(input: UpdateJamInput): Promise<void> {
   if (error) throw error
 }
 
-export async function runMatching(jamId?: string): Promise<number> {
+/** Run matching for one jam (caller must be a participant). Global null is rejected server-side. */
+export async function runMatching(jamId: string): Promise<number> {
   const { data, error } = await getSupabase().rpc('process_jam_matching', {
-    p_jam_id: jamId ?? null,
+    p_jam_id: jamId,
   })
   if (error) throw error
   return (data as number) ?? 0
@@ -218,7 +219,6 @@ export async function listInbox(userId: string): Promise<
   >
 > {
   const supabase = getSupabase()
-  await runMatching()
 
   const { data: invites, error } = await supabase
     .from('jam_invites')

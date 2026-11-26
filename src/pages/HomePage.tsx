@@ -48,46 +48,26 @@ export function HomePage() {
       listMyJams(session.user.id),
       listBrowseJams().catch(() => [] as BrowseJamRow[]),
     ])
+    // Suggest only for *my* undated jams (P0: no N× suggest over the whole feed).
     const undatedMine = mine.filter(
       (j) => !j.window_start && !isJamArchived(j),
     )
-    const undatedBrowse = feed.filter((j) => !j.window_start)
-    const undatedIds = [
-      ...new Set([
-        ...undatedMine.map((j) => j.id),
-        ...undatedBrowse.map((j) => j.id),
-      ]),
-    ]
     const sugEntries = await Promise.all(
-      undatedIds.map(async (id) => {
+      undatedMine.map(async (j) => {
         try {
-          const s = await fetchSuggestedJamWindow(id)
-          return s ? ([id, s] as const) : null
+          const s = await fetchSuggestedJamWindow(j.id)
+          return s ? ([j.id, s] as const) : null
         } catch {
           return null
         }
       }),
     )
-    const suggestions = new Map(
-      sugEntries.filter((e): e is [string, SuggestedJamWindow] => !!e),
-    )
     setProfile(p)
     setMyJams(mine)
-    setBrowse(
-      feed.map((row) => {
-        const sug = suggestions.get(row.id)
-        if (!sug) return row
-        return {
-          ...row,
-          suggested_window_start: sug.window_start,
-          suggested_window_end: sug.window_end,
-          suggested_match_count: sug.match_count,
-          suggested_participant_count: sug.participant_count,
-          suggested_matched_names: sug.matched_names,
-        }
-      }),
+    setBrowse(feed)
+    setMySuggestions(
+      new Map(sugEntries.filter((e): e is [string, SuggestedJamWindow] => !!e)),
     )
-    setMySuggestions(suggestions)
   }, [session])
 
   useEffect(() => {
@@ -137,10 +117,17 @@ export function HomePage() {
   )
 
   async function refreshMatching() {
+    if (!session) return
     setMatching(true)
     setError(null)
     try {
-      await runMatching()
+      const targets = myOpen.filter(
+        (j) =>
+          j.creator_id === session.user.id &&
+          j.status === 'matching' &&
+          Boolean(j.window_start && j.window_end),
+      )
+      await Promise.all(targets.map((j) => runMatching(j.id).catch(() => 0)))
       await reload()
     } catch (err) {
       setError(err instanceof Error ? err.message : t.common.error)
