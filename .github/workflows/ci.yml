@@ -16,6 +16,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npx tsc --noEmit
+      - run: npx oxlint src
       - run: npm run build
-      - name: Typecheck / lint
-        run: npx oxlint src || true
