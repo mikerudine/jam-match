@@ -67,8 +67,8 @@
 | Риск | Детали |
 | --- | --- |
 | Idea-jam без дат | `offer_next_for_seat` требует `window_start`/`window_end`; кнопка matching для undated почти no-op, хотя UX обещает матчинг «позже». |
-| Accept join всегда `INSERT` seat | Не заполняет существующее open seat → дубли ролей / раздувание состава. |
-| Unique только на pending join | `jam_join_requests_one_pending`; нет «один accepted на user×jam». |
+| ~~Accept join всегда INSERT~~ | `respond_to_join_request_as` | Закрыто: fill open/invited seat той же роли, иначе INSERT (`20261126160000`). |
+| ~~Unique только pending join~~ | `jam_join_requests` | Закрыто: `jam_join_requests_one_accepted` + `jam_seats_one_filled_user`. |
 | Статус `cancelled` | Есть в enum и i18n, **нет** RPC/UI отмены. |
 | Feedback → `completed` | Только если `window_end < now()`; undated confirmed может «зависнуть». |
 | Reliability | Дельта с feedback уходит на **других** участников, не на автора — легко геймить / выглядит несправедливо. |
@@ -137,7 +137,7 @@
 | 4 | Скрыть `telegram_id` от чужих (`profiles` RLS / view). | done `20261126140000` |
 | 5 | Push/Telegram на invites. | done `20261126150000` + jam-notify |
 | 6 | Matching для idea-jam: либо даты обязательны в UI, либо suggest-based offer. |
-| 7 | Accept join → fill open seat + unique accepted. |
+| 7 | Accept join → fill open seat + unique accepted. | done `20261126160000` |
 | 8 | Видимый результат `jam-notify` (успех / skipped). |
 | 9 | Алерт / retry на `ensure_profile` после Telegram auth. |
 
@@ -162,6 +162,7 @@
 [x] audience invite (link-only) + friends = fr_ link — 20261126130000
 [x] profiles — telegram_id / write_access скрыты (column grants + get_own_profile, 20261126140000)
 [x] matching invites — Telegram DM via jam-notify { invite_id } (20261126150000)
+[x] accept join — fill open/invited seat + unique accepted (20261126160000)
 [ ] jam-notify — видит ли юзер skipped (P1)
 [ ] cancelled / completed undated — есть ли путь в UI (P2)
 [ ] CI lint реально failит? (P2)
