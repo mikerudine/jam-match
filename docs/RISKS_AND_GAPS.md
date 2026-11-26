@@ -147,7 +147,7 @@
 | --- | --- |
 | 10 | Отмена джема, completed для undated, доработка reliability. | done `20261126180000` | done `20261126180000` |
 | 11 | ErrorBoundary, явные ошибки секций. | done client |
-| 12 | CI без `\|\| true`, тесты RPC, автодеплой Edge. | done CI lint/tsc fail; Edge deploy still manual |
+| 12 | CI без `\|\| true`, тесты RPC, автодеплой Edge. | local `.github/workflows/ci.yml` ready (needs `workflow` scope to push); Edge still manual |
 | 13 | Revoke лишних `GRANT … TO anon`; defense in depth. | done `20261126190000` |
 | 14 | Рефактор `suggest_window_for_users` (precompute сетки / лимит горизонта). | open (perf) |
 
