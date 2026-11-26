@@ -159,6 +159,7 @@
 [x] suggest_jam_window — gate + strip IDs for non-participants (20261126120000)
 [x] listInbox / Home — нет process_jam_matching(null); только jam_id + participant (20261126120100)
 [x] Home — suggest только для *моих* undated (не весь browse feed)
+[x] audience invite (link-only) + friends = fr_ link — 20261126130000
 [ ] profiles select * — утекает ли telegram_id (P1)
 [ ] jam-notify — видит ли юзер skipped (P1)
 [ ] cancelled / completed undated — есть ли путь в UI (P2)

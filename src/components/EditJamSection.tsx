@@ -358,10 +358,11 @@ export function EditJamSection({
 
       <section className="space-y-2">
         <p className="text-sm text-mute">{t.jam.audience}</p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {([
             ['open', t.jam.audienceOpen],
             ['friends', t.jam.audienceFriends],
+            ['invite', t.jam.audienceInvite],
           ] as const).map(([value, label]) => (
             <button
               key={value}
@@ -377,9 +378,13 @@ export function EditJamSection({
             </button>
           ))}
         </div>
-        {audience === 'friends' ? (
-          <p className="text-xs text-mute">{t.jam.audienceFriendsHint}</p>
-        ) : null}
+        <p className="text-xs text-mute">
+          {audience === 'friends'
+            ? t.jam.audienceFriendsHint
+            : audience === 'invite'
+              ? t.jam.audienceInviteHint
+              : t.jam.audienceOpenHint}
+        </p>
       </section>
 
       <label className="block text-sm text-mute">

@@ -402,6 +402,11 @@ export function JamDetailPage() {
               {t.jam.friendsOnlyBadge}
             </span>
           ) : null}
+          {(jam.audience ?? 'open') === 'invite' ? (
+            <span className="rounded-full bg-amber/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber">
+              {t.jam.inviteOnlyBadge}
+            </span>
+          ) : null}
         </div>
         <h1 className="font-display mt-1 text-2xl">
           {jam.theme?.trim() || t.formats[jam.format]}

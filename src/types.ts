@@ -5,7 +5,8 @@ export type JamStatus = 'matching' | 'confirmed' | 'cancelled' | 'completed'
 export type SeatStatus = 'open' | 'invited' | 'filled'
 export type InviteStatus = 'pending' | 'accepted' | 'skipped' | 'expired'
 export type JoinRequestStatus = 'pending' | 'accepted' | 'declined'
-export type JamAudience = 'open' | 'friends'
+/** open = public feed; friends = fr_ link circle; invite = jam link only */
+export type JamAudience = 'open' | 'friends' | 'invite'
 export type Locale = 'uk' | 'en'
 
 export const INSTRUMENTS: Instrument[] = [

@@ -195,8 +195,14 @@ const uk = {
     audience: 'Хто бачить джем',
     audienceOpen: 'Усі',
     audienceFriends: 'Тільки друзі',
-    audienceFriendsHint: 'Матчинг і join лише для ваших друзів з Telegram-посилання.',
+    audienceInvite: 'За запрошенням',
+    audienceFriendsHint:
+      'Друзі — хто відкрив ваше Telegram-посилання «додай в друзі». Лента, join і авто-матчинг лише для них.',
+    audienceInviteHint:
+      'Не в загальній стрічці. Потрапити можна за посиланням на цей джем (join-заявка). Авто-матчингу немає.',
+    audienceOpenHint: 'У стрічці для всіх; join і авто-матчинг відкриті.',
     friendsOnlyBadge: 'Тільки друзі',
+    inviteOnlyBadge: 'Запрошення',
     friendsOnlyTitle: 'Тільки для друзів',
     friendsOnlyBody:
       'Цей джем закритий. Попросіть організатора надіслати запрошення в друзі через Telegram.',
@@ -211,7 +217,7 @@ const uk = {
   },
   friends: {
     title: 'Друзі',
-    hint: 'Додавання лише через Telegram-посилання — без пошуку в додатку.',
+    hint: 'Друзі = хто відкрив ваше посилання «додай в друзі» в Telegram. Пошуку людей у додатку немає.',
     empty: 'Поки немає друзів. Надішліть посилання знайомому в Telegram.',
     share: 'Поділитися запрошенням',
     copyLink: 'Скопіювати посилання',
@@ -508,8 +514,14 @@ const en = {
     audience: 'Who can see this jam',
     audienceOpen: 'Everyone',
     audienceFriends: 'Friends only',
-    audienceFriendsHint: 'Matching and join are limited to friends from your Telegram invite link.',
+    audienceInvite: 'Invite only',
+    audienceFriendsHint:
+      'Friends are people who opened your Telegram “add me” link. Feed, join, and auto-matching are limited to them.',
+    audienceInviteHint:
+      'Hidden from the public feed. People join via this jam’s link (join request). No auto-matching.',
+    audienceOpenHint: 'Listed for everyone; join and auto-matching are open.',
     friendsOnlyBadge: 'Friends only',
+    inviteOnlyBadge: 'Invite only',
     friendsOnlyTitle: 'Friends only',
     friendsOnlyBody:
       'This jam is private. Ask the organizer to send you a friend invite via Telegram.',
@@ -524,7 +536,7 @@ const en = {
   },
   friends: {
     title: 'Friends',
-    hint: 'Add friends only via a Telegram link — no in-app search.',
+    hint: 'Friends = people who opened your Telegram “add me” link. No in-app people search.',
     empty: 'No friends yet. Share your invite link in Telegram.',
     share: 'Share invite',
     copyLink: 'Copy link',
