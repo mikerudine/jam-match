@@ -42,7 +42,7 @@ export function NewJamPage() {
   const [end, setEnd] = useState('21:00')
   const [area, setArea] = useState('')
   const [baseName, setBaseName] = useState('')
-  const [ttl, setTtl] = useState(3)
+  const [ttl, setTtl] = useState(12)
   const [audience, setAudience] = useState<JamAudience>('open')
   const [locationDrafts, setLocationDrafts] = useState<LocationDraftItem[]>([])
 

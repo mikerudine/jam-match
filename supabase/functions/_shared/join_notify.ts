@@ -157,6 +157,52 @@ export interface DecisionNotifyInput {
   botUsername?: string
 }
 
+export interface MatchingInviteNotifyInput {
+  role: string
+  jamFormat: string
+  jamArea: string
+  jamGenres?: string[] | null
+  windowStart: string
+  windowEnd: string
+  expiresAt?: string | null
+  jamId: string
+  botUsername?: string
+}
+
+/** Ukrainian text for a matching seat invite (invitee). */
+export function formatMatchingInviteMessage(
+  input: MatchingInviteNotifyInput,
+): string {
+  const lines = [
+    '🎶 Запрошення на джем',
+    '',
+    `Роль: ${input.role.trim()}`,
+    `Джем: ${formatJamLabelUk({
+      format: input.jamFormat,
+      area: input.jamArea,
+      genres: input.jamGenres,
+    })}`,
+    `Час: ${formatJamWindowUk(input.windowStart, input.windowEnd)}`,
+  ]
+  if (input.expiresAt) {
+    const exp = new Date(input.expiresAt)
+    if (!Number.isNaN(exp.getTime())) {
+      const when = new Intl.DateTimeFormat('uk-UA', {
+        timeZone: 'Europe/Kyiv',
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(exp)
+      lines.push(`Відповісти до: ${when}`)
+    }
+  }
+  lines.push('', 'Відкрий Inbox у Jam Match, щоб прийняти або пропустити.')
+  return lines.join('\n')
+}
+
 /** Ukrainian text notifying the requester of accept/decline. */
 export function formatDecisionMessage(input: DecisionNotifyInput): string {
   const jam = formatJamLabelUk({

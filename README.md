@@ -119,7 +119,9 @@ It also checks `auth_date` freshness (24h), creates/finds a Supabase Auth user (
 
 ### Join-request Telegram notify
 
-When someone calls `jam.request_to_join`, the SPA invokes Edge Function **`jam-notify`** (user JWT) with the new request id. That function loads the request with the service role, checks the caller is the requester, and `sendMessage`s the jam initiator (Ukrainian text + inline **Прийняти** / **Відхилити** + Mini App URL). After `jam.respond_to_join_request` (or an inline-button decision), the requester gets a decision DM. Notify failures are soft — the join RPC still succeeds.
+When someone calls `jam.request_to_join`, the SPA invokes Edge Function **`jam-notify`** (user JWT) with `{ request_id }`. That function loads the request with the service role, checks the caller is the requester, and `sendMessage`s the jam initiator (Ukrainian text + inline **Прийняти** / **Відхилити** + Mini App URL). After `jam.respond_to_join_request` (or an inline-button decision), the requester gets a decision DM.
+
+Matching invites use the same function with `{ invite_id }`: after `process_jam_matching` / skip cascade, the SPA notifies the invitee. Authz: jam participant or prior invitee on that jam. Notify failures are soft — RPC flows still succeed.
 
 Inline buttons are handled by **`telegram-webhook`** (`verify_jwt = false`). Telegram posts updates with header `X-Telegram-Bot-Api-Secret-Token`, which must match secret **`TELEGRAM_WEBHOOK_SECRET`**. The webhook maps `callback_query.from.id` → `jam.profiles.telegram_id`, runs **`jam.respond_to_join_request_as`** (service_role only), edits the message, and notifies the requester.
 
@@ -195,7 +197,7 @@ supabase/
   migrations/     # schema jam only, RLS, matching RPCs
   functions/
     telegram-auth/     # hash verify → session token_hash
-    jam-notify/        # client JWT → Telegram DM (join / decision)
+    jam-notify/        # client JWT → Telegram DM (join / matching invite)
     telegram-webhook/  # Bot updates (callbacks + /start)
     _shared/           # message formatting / callback parsing
   config.toml
@@ -221,4 +223,4 @@ node scripts/screenshots.mjs
 - overlaps genres and preferred area
 - has not already been invited / skipped for that seat
 
-Ordering: **role scarcity** → genre overlap → **reliability_score**. Invite TTL defaults to a few hours (configurable per jam) because there is no push yet.
+Ordering: **role scarcity** → genre overlap → **reliability_score**. Invite TTL defaults to 12 hours (configurable per jam 1–48). After matching creates invites, the SPA soft-calls **`jam-notify`** with `{ invite_id }` so invitees get a Telegram DM + Mini App link (same soft-fail pattern as join requests).

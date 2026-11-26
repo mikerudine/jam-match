@@ -1,4 +1,4 @@
-import { notifyJoinRequest } from '@/api/notify'
+import { notifyJoinRequest, notifyMatchingInvite } from '@/api/notify'
 import { getSupabase } from '@/lib/supabase'
 import type {
   ConfirmedMember,
@@ -86,7 +86,11 @@ export async function runMatching(jamId: string): Promise<number> {
     p_jam_id: jamId,
   })
   if (error) throw error
-  return (data as number) ?? 0
+  const inviteIds = (Array.isArray(data) ? data : []) as string[]
+  await Promise.all(
+    inviteIds.map((id) => notifyMatchingInvite(id).catch(() => undefined)),
+  )
+  return inviteIds.length
 }
 
 export async function listMyJams(userId: string): Promise<
@@ -261,11 +265,15 @@ export async function respondToInvite(
   inviteId: string,
   accept: boolean,
 ): Promise<void> {
-  const { error } = await getSupabase().rpc('respond_to_invite', {
+  const { data, error } = await getSupabase().rpc('respond_to_invite', {
     p_invite_id: inviteId,
     p_accept: accept,
   })
   if (error) throw error
+  const nextInviteId = typeof data === 'string' ? data : null
+  if (nextInviteId) {
+    await notifyMatchingInvite(nextInviteId).catch(() => undefined)
+  }
 }
 
 export async function submitFeedback(input: {

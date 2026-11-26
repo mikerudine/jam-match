@@ -72,7 +72,7 @@
 | Статус `cancelled` | Есть в enum и i18n, **нет** RPC/UI отмены. |
 | Feedback → `completed` | Только если `window_end < now()`; undated confirmed может «зависнуть». |
 | Reliability | Дельта с feedback уходит на **других** участников, не на автора — легко геймить / выглядит несправедливо. |
-| Invites без push | README: TTL короткий *«because there is no push yet»*; inbox без внешнего сигнала. |
+| ~~Invites без push~~ | `jam-notify` + matching | Закрыто: `{ invite_id }` DM invitee; TTL default 12h (`20261126150000`). |
 | Notify soft-fail | Join Telegram (`jam-notify`) глотает ошибки; пользователь не видит, что организатор не получил сообщение. |
 
 ### 2.3. Клиент / UX
@@ -134,8 +134,8 @@
 
 | # | Действие |
 | --- | --- |
-| 4 | Скрыть `telegram_id` от чужих (`profiles` RLS / view). |
-| 5 | Push/Telegram на invites. |
+| 4 | Скрыть `telegram_id` от чужих (`profiles` RLS / view). | done `20261126140000` |
+| 5 | Push/Telegram на invites. | done `20261126150000` + jam-notify |
 | 6 | Matching для idea-jam: либо даты обязательны в UI, либо suggest-based offer. |
 | 7 | Accept join → fill open seat + unique accepted. |
 | 8 | Видимый результат `jam-notify` (успех / skipped). |
@@ -161,6 +161,7 @@
 [x] Home — suggest только для *моих* undated (не весь browse feed)
 [x] audience invite (link-only) + friends = fr_ link — 20261126130000
 [x] profiles — telegram_id / write_access скрыты (column grants + get_own_profile, 20261126140000)
+[x] matching invites — Telegram DM via jam-notify { invite_id } (20261126150000)
 [ ] jam-notify — видит ли юзер skipped (P1)
 [ ] cancelled / completed undated — есть ли путь в UI (P2)
 [ ] CI lint реально failит? (P2)

@@ -15,6 +15,7 @@ import {
   formatJamLabelUk,
   formatJamWindowUk,
   formatJoinRequestMessage,
+  formatMatchingInviteMessage,
   formatResolvedOrganizerMessage,
   parseJoinCallbackData,
 } from './join_notify.ts'
@@ -173,6 +174,24 @@ describe('Ukrainian message formatting', () => {
       formatJamLabelUk({ format: 'free_jam', area: 'Podil', genres: [] }),
       'Вільний джем · Podil',
     )
+  })
+
+  it('formats matching invite for the invitee', () => {
+    const text = formatMatchingInviteMessage({
+      role: 'guitar',
+      jamFormat: 'free_jam',
+      jamArea: 'Podil',
+      jamGenres: ['rock'],
+      windowStart: '2026-11-20T17:00:00.000Z',
+      windowEnd: '2026-11-20T19:00:00.000Z',
+      expiresAt: '2026-11-20T20:00:00.000Z',
+      jamId: JAM_ID,
+    })
+    assert.match(text, /Запрошення на джем/)
+    assert.match(text, /Роль: guitar/)
+    assert.match(text, /Вільний джем · Podil · rock/)
+    assert.match(text, /Відповісти до:/)
+    assert.match(text, /Inbox/)
   })
 })
 

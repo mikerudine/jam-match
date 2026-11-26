@@ -16,7 +16,7 @@ Mobile-first SPA (Vite + React 19 + TS) for jam/rehearsal matching. Backend: Sup
 | `src/auth/AuthContext.tsx` | `AuthProvider` / `useAuth()` — session + `ensureProfile` after sign-in |
 | `src/auth/supabaseAuth.ts` | `createSupabaseAuthAdapter(): AuthAdapter` — Telegram + optional email |
 | `supabase/functions/telegram-auth/index.ts` | `Deno.serve` — verify widget/initData → Auth user + `token_hash` |
-| `supabase/functions/jam-notify/index.ts` | `Deno.serve` POST `{ request_id }` — Telegram join/decision messages |
+| `supabase/functions/jam-notify/index.ts` | `Deno.serve` POST `{ request_id }` or `{ invite_id }` — join/decision + matching invite DMs |
 | `supabase/functions/telegram-webhook/index.ts` | `Deno.serve` — bot callbacks Accept/Decline join |
 | `src/api/*.ts` | Client data layer → Supabase tables/RPCs (`profile`, `jams`, `songs`, `locations`, …) |
 | `scripts/seed.mjs` | Seed ~20 musicians for local matching |
@@ -104,7 +104,7 @@ Enums mirror TS unions (`jam.instrument`, `jam.jam_status`, …). Timestamps: `t
    UI page/component → `src/api/jams.ts` (`createJam` / `runMatching` / `respondToInvite`) → RPC in `supabase/migrations/` → types in `src/types.ts` → cover path in page + `npm test` if pure helper.
 
 2. **New join / Telegram notify path**  
-   Client: `requestToJoin` / `respondToJoinRequest` + `notifyJoinRequest` → Edge `jam-notify` / `telegram-webhook` → shared copy/keyboard in `_shared/join_notify.ts` → secrets `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`.
+   Client: `requestToJoin` / `respondToJoinRequest` + `notifyJoinRequest`, and `runMatching` / `respondToInvite` + `notifyMatchingInvite` → Edge `jam-notify` / `telegram-webhook` → shared copy/keyboard in `_shared/join_notify.ts` → secrets `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`.
 
 3. **New API-facing data call**  
    Add/extend function in `src/api/<domain>.ts` → table or RPC under schema `jam` → mirror fields in `src/types.ts` (or `songList.ts` / `locationList.ts`) → wire page/component → optional unit test next to helper.
