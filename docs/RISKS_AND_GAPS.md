@@ -66,14 +66,14 @@
 
 | Риск | Детали |
 | --- | --- |
-| Idea-jam без дат | `offer_next_for_seat` требует `window_start`/`window_end`; кнопка matching для undated почти no-op, хотя UX обещает матчинг «позже». |
+| ~~Idea-jam без дат~~ | matching | Закрыто UX: undated не зовёт matching; creator может `apply_jam_window` из suggest (`20261126170000`). |
 | ~~Accept join всегда INSERT~~ | `respond_to_join_request_as` | Закрыто: fill open/invited seat той же роли, иначе INSERT (`20261126160000`). |
 | ~~Unique только pending join~~ | `jam_join_requests` | Закрыто: `jam_join_requests_one_accepted` + `jam_seats_one_filled_user`. |
 | Статус `cancelled` | Есть в enum и i18n, **нет** RPC/UI отмены. |
 | Feedback → `completed` | Только если `window_end < now()`; undated confirmed может «зависнуть». |
 | Reliability | Дельта с feedback уходит на **других** участников, не на автора — легко геймить / выглядит несправедливо. |
 | ~~Invites без push~~ | `jam-notify` + matching | Закрыто: `{ invite_id }` DM invitee; TTL default 12h (`20261126150000`). |
-| Notify soft-fail | Join Telegram (`jam-notify`) глотает ошибки; пользователь не видит, что организатор не получил сообщение. |
+| ~~Notify soft-fail~~ | jam-notify | Закрыто: JoinRequestForm / JoinRequestsPanel показывают warn при `skipped`. |
 
 ### 2.3. Клиент / UX
 
@@ -136,10 +136,10 @@
 | --- | --- |
 | 4 | Скрыть `telegram_id` от чужих (`profiles` RLS / view). | done `20261126140000` |
 | 5 | Push/Telegram на invites. | done `20261126150000` + jam-notify |
-| 6 | Matching для idea-jam: либо даты обязательны в UI, либо suggest-based offer. |
+| 6 | Matching для idea-jam: либо даты обязательны в UI, либо suggest-based offer. | done `20261126170000` + UI |
 | 7 | Accept join → fill open seat + unique accepted. | done `20261126160000` |
-| 8 | Видимый результат `jam-notify` (успех / skipped). |
-| 9 | Алерт / retry на `ensure_profile` после Telegram auth. |
+| 8 | Видимый результат `jam-notify` (успех / skipped). | done client |
+| 9 | Алерт / retry на `ensure_profile` после Telegram auth. | done AuthContext |
 
 ### P2 — качество и ops
 
@@ -163,7 +163,9 @@
 [x] profiles — telegram_id / write_access скрыты (column grants + get_own_profile, 20261126140000)
 [x] matching invites — Telegram DM via jam-notify { invite_id } (20261126150000)
 [x] accept join — fill open/invited seat + unique accepted (20261126160000)
-[ ] jam-notify — видит ли юзер skipped (P1)
+[x] idea-jam — apply suggested window + match (20261126170000)
+[x] jam-notify — UI warn on skipped (P1)
+[x] ensure_profile — banner + retry after auth (P1)
 [ ] cancelled / completed undated — есть ли путь в UI (P2)
 [ ] CI lint реально failит? (P2)
 [ ] После DROP FUNCTION — есть NOTIFY pgrst? (P2)

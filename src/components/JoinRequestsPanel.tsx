@@ -3,6 +3,7 @@ import {
   listJoinRequestsForJam,
   respondToJoinRequest,
 } from '@/api/jams'
+import type { NotifyResult } from '@/api/notify'
 import { useLocale } from '@/i18n/LocaleContext'
 import {
   isJamOpenForJoin,
@@ -25,7 +26,10 @@ export interface JoinRequestsPanelProps {
   onChanged?: () => void | Promise<void>
   /** Optional fixture rows (preview). */
   initialRows?: JoinRow[]
-  respondFn?: (requestId: string, accept: boolean) => Promise<void>
+  respondFn?: (
+    requestId: string,
+    accept: boolean,
+  ) => Promise<void | { notify: NotifyResult }>
   listFn?: (jamId: string) => Promise<JoinRow[]>
 }
 
@@ -45,6 +49,7 @@ export function JoinRequestsPanel({
   const [loading, setLoading] = useState(!initialRows)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notifyWarn, setNotifyWarn] = useState<string | null>(null)
 
   useEffect(() => {
     if (initialRows) {
@@ -77,8 +82,16 @@ export function JoinRequestsPanel({
   async function respond(id: string, accept: boolean) {
     setBusyId(id)
     setError(null)
+    setNotifyWarn(null)
     try {
-      await (respondFn ?? respondToJoinRequest)(id, accept)
+      const result = await (respondFn ?? respondToJoinRequest)(id, accept)
+      const notify =
+        result && typeof result === 'object' && 'notify' in result
+          ? result.notify
+          : ({ ok: true } as NotifyResult)
+      if (!notify.ok) {
+        setNotifyWarn(t.jam.notifySkipped)
+      }
       setRows((prev) =>
         prev.map((r) =>
           r.id === id
@@ -148,6 +161,7 @@ export function JoinRequestsPanel({
           ))}
         </ul>
       )}
+      {notifyWarn && <p className="text-sm text-amber">{notifyWarn}</p>}
       {error && <p className="text-sm text-danger">{error}</p>}
     </section>
   )

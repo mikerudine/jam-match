@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { requestToJoin } from '@/api/jams'
+import type { NotifyResult } from '@/api/notify'
 import { useLocale } from '@/i18n/LocaleContext'
 import {
   INSTRUMENTS,
@@ -18,7 +19,7 @@ export interface JoinRequestFormProps {
     jam_id: string
     role: string
     note?: string
-  }) => Promise<string>
+  }) => Promise<{ requestId: string; notify: NotifyResult } | string>
 }
 
 /** Isolated join-request form for non-initiator musicians on an open jam. */
@@ -36,6 +37,7 @@ export function JoinRequestForm({
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notifyWarn, setNotifyWarn] = useState<string | null>(null)
 
   if (!open) return null
 
@@ -69,12 +71,20 @@ export function JoinRequestForm({
     if (!trimmed) return
     setBusy(true)
     setError(null)
+    setNotifyWarn(null)
     try {
-      await (submitFn ?? requestToJoin)({
+      const result = await (submitFn ?? requestToJoin)({
         jam_id: jam.id,
         role: trimmed,
         note: note.trim() || undefined,
       })
+      const notify =
+        typeof result === 'string'
+          ? ({ ok: true } as NotifyResult)
+          : result.notify
+      if (!notify.ok) {
+        setNotifyWarn(t.jam.notifySkipped)
+      }
       setRole('')
       setNote('')
       setCustom(false)
@@ -165,6 +175,7 @@ export function JoinRequestForm({
       >
         {busy ? t.common.loading : t.jam.joinSend}
       </button>
+      {notifyWarn && <p className="text-sm text-amber">{notifyWarn}</p>}
       {error && <p className="text-sm text-danger">{error}</p>}
     </form>
   )

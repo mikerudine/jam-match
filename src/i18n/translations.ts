@@ -38,6 +38,9 @@ const uk = {
     telegramDomainHint:
       'На проді віджет з’явиться після /setdomain у @BotFather для mikerudine.github.io.',
     devEmail: 'Dev: email (seed)',
+    profileSyncFailed:
+      'Не вдалося створити профіль після входу. Без нього джеми не працюють.',
+    profileSyncRetry: 'Спробувати ще',
   },
   profile: {
     title: 'Профіль',
@@ -131,7 +134,13 @@ const uk = {
     showDetails: 'Додати дату / склад (необовʼязково)',
     hideDetails: 'Сховати деталі',
     scheduleIncomplete: 'Заповніть початок і кінець або залиште дату порожньою',
-    dateOptional: 'Без дати джем лишається ідеєю — матчинг пізніше',
+    dateOptional:
+      'Без дати джем лишається ідеєю — для автопідбору потрібен час',
+    matchingNeedsDate:
+      'Автопідбір запрошує людей лише після дати. Вкажіть час у редагуванні або візьміть слот за розкладами.',
+    applySuggestedMatch: 'Поставити запропонований час і підібрати',
+    notifySkipped:
+      'Запит збережено, але Telegram-повідомлення не надіслано. Перевірте, що бот може писати і є доступ на повідомлення.',
     lineupOptional: 'Можна створити без відкритих місць — лише ви',
     format: 'Формат',
     genres: 'Жанри',
@@ -357,6 +366,9 @@ const en = {
     telegramDomainHint:
       'On production the widget appears after BotFather /setdomain for mikerudine.github.io.',
     devEmail: 'Dev: email (seed)',
+    profileSyncFailed:
+      'Could not create your profile after sign-in. Jams will not work without it.',
+    profileSyncRetry: 'Try again',
   },
   profile: {
     title: 'Profile',
@@ -450,7 +462,13 @@ const en = {
     showDetails: 'Add date / line-up (optional)',
     hideDetails: 'Hide details',
     scheduleIncomplete: 'Fill start and end, or leave the date empty',
-    dateOptional: 'Without a date this stays an idea — matching later',
+    dateOptional:
+      'Without a date this stays an idea — auto-matching needs a time window',
+    matchingNeedsDate:
+      'Auto-matching invites people only after a date is set. Pick a time in edit, or use the schedule suggestion.',
+    applySuggestedMatch: 'Set suggested time and match',
+    notifySkipped:
+      'Saved, but the Telegram message was not sent. Check that the bot can message them and write access is granted.',
     lineupOptional: 'You can create with no open seats — just you',
     format: 'Format',
     genres: 'Genres',

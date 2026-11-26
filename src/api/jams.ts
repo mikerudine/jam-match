@@ -1,4 +1,8 @@
-import { notifyJoinRequest, notifyMatchingInvite } from '@/api/notify'
+import {
+  notifyJoinRequest,
+  notifyMatchingInvite,
+  type NotifyResult,
+} from '@/api/notify'
 import { getSupabase } from '@/lib/supabase'
 import type {
   ConfirmedMember,
@@ -80,6 +84,12 @@ export async function updateJam(input: UpdateJamInput): Promise<void> {
   if (error) throw error
 }
 
+async function notifyNewInvites(inviteIds: string[]): Promise<void> {
+  await Promise.all(
+    inviteIds.map((id) => notifyMatchingInvite(id).catch(() => undefined)),
+  )
+}
+
 /** Run matching for one jam (caller must be a participant). Global null is rejected server-side. */
 export async function runMatching(jamId: string): Promise<number> {
   const { data, error } = await getSupabase().rpc('process_jam_matching', {
@@ -87,9 +97,27 @@ export async function runMatching(jamId: string): Promise<number> {
   })
   if (error) throw error
   const inviteIds = (Array.isArray(data) ? data : []) as string[]
-  await Promise.all(
-    inviteIds.map((id) => notifyMatchingInvite(id).catch(() => undefined)),
-  )
+  await notifyNewInvites(inviteIds)
+  return inviteIds.length
+}
+
+/**
+ * Set jam window (idea → scheduled) and run matching.
+ * Creator only; used for suggested slots on undated jams.
+ */
+export async function applyJamWindowAndMatch(input: {
+  jam_id: string
+  window_start: string
+  window_end: string
+}): Promise<number> {
+  const { data, error } = await getSupabase().rpc('apply_jam_window', {
+    p_jam_id: input.jam_id,
+    p_window_start: input.window_start,
+    p_window_end: input.window_end,
+  })
+  if (error) throw error
+  const inviteIds = (Array.isArray(data) ? data : []) as string[]
+  await notifyNewInvites(inviteIds)
   return inviteIds.length
 }
 
@@ -307,7 +335,7 @@ export async function requestToJoin(input: {
   jam_id: string
   role: string
   note?: string
-}): Promise<string> {
+}): Promise<{ requestId: string; notify: NotifyResult }> {
   const { data, error } = await getSupabase().rpc('request_to_join', {
     p_jam_id: input.jam_id,
     p_role: input.role,
@@ -315,22 +343,21 @@ export async function requestToJoin(input: {
   })
   if (error) throw error
   const requestId = data as string
-  // Soft-fail Telegram ping to the jam organizer (Accept / Decline buttons).
-  void notifyJoinRequest(requestId)
-  return requestId
+  const notify = await notifyJoinRequest(requestId)
+  return { requestId, notify }
 }
 
 export async function respondToJoinRequest(
   requestId: string,
   accept: boolean,
-): Promise<void> {
+): Promise<{ notify: NotifyResult }> {
   const { error } = await getSupabase().rpc('respond_to_join_request', {
     p_request_id: requestId,
     p_accept: accept,
   })
   if (error) throw error
-  // Soft-fail Telegram ping to the requester about the decision.
-  void notifyJoinRequest(requestId)
+  const notify = await notifyJoinRequest(requestId)
+  return { notify }
 }
 
 export async function listJoinRequestsForJam(

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
+  applyJamWindowAndMatch,
   getJamDetail,
   getMyJoinRequest,
   getPublicJamResult,
@@ -89,6 +90,7 @@ export function JamDetailPage() {
   const [submitting, setSubmitting] = useState(false)
   const [shareBusy, setShareBusy] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [applySuggestedBusy, setApplySuggestedBusy] = useState(false)
   const [songsBusy, setSongsBusy] = useState(false)
   const [locationsBusy, setLocationsBusy] = useState(false)
   const [myJoin, setMyJoin] = useState<JamJoinRequest | null>(null)
@@ -135,8 +137,17 @@ export function JamDetailPage() {
     let cancelled = false
     ;(async () => {
       try {
-        await runMatching(jamId).catch(() => 0)
-        const d = await getJamDetail(jamId)
+        let d = await getJamDetail(jamId)
+        // Matching only works with a concrete window; skip no-op for idea-jams.
+        if (
+          d.jam.window_start &&
+          d.jam.window_end &&
+          d.jam.status === 'matching' &&
+          (d.jam.audience ?? 'open') !== 'invite'
+        ) {
+          await runMatching(jamId).catch(() => 0)
+          d = await getJamDetail(jamId)
+        }
         const done = await hasSubmittedFeedback(jamId, session.user.id)
         let songs: JamSongList | null = null
         let locations: JamLocationList | null = null
@@ -456,6 +467,45 @@ export function JamDetailPage() {
           </button>
         </div>
       )}
+
+      {isInitiator &&
+      jam.status === 'matching' &&
+      !jam.window_start &&
+      (jam.audience ?? 'open') !== 'invite' ? (
+        <section className="rounded-2xl border border-amber/40 bg-amber/10 p-4">
+          <p className="text-sm text-cream">{t.jam.matchingNeedsDate}</p>
+          {suggestedWhen?.window_start && suggestedWhen.window_end ? (
+            <button
+              type="button"
+              disabled={applySuggestedBusy}
+              className="mt-3 rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-60"
+              onClick={async () => {
+                if (!jamId) return
+                setApplySuggestedBusy(true)
+                setError(null)
+                try {
+                  await applyJamWindowAndMatch({
+                    jam_id: jamId,
+                    window_start: suggestedWhen.window_start,
+                    window_end: suggestedWhen.window_end,
+                  })
+                  await refreshDetail()
+                } catch (err) {
+                  setError(
+                    err instanceof Error ? err.message : t.common.error,
+                  )
+                } finally {
+                  setApplySuggestedBusy(false)
+                }
+              }}
+            >
+              {applySuggestedBusy
+                ? t.common.loading
+                : t.jam.applySuggestedMatch}
+            </button>
+          ) : null}
+        </section>
+      ) : null}
 
       {isInitiator ? (
         <EditJamSection jam={jam} seats={seats} onUpdated={refreshDetail} />

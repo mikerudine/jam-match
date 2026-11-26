@@ -222,7 +222,7 @@ function PreviewInner() {
             }
             setRows((prev) => [row, ...prev.filter((r) => r.status !== 'pending')])
             setMyJoin(row)
-            return id
+            return { requestId: id, notify: { ok: true } }
           }}
           onSubmitted={async () => {}}
         />

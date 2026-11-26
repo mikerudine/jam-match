@@ -86,7 +86,7 @@ function PreviewInner() {
             created_at: new Date().toISOString(),
             responded_at: null,
           })
-          return id
+          return { requestId: id, notify: { ok: true } }
         }}
         onSubmitted={async () => {}}
       />
