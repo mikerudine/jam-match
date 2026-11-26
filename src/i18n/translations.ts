@@ -172,6 +172,10 @@ const uk = {
     completeJam: 'Позначити завершеним',
     cancelNotifySkipped:
       'Джем скасовано, але частина Telegram-повідомлень не пішла.',
+    sectionSongsFailed: 'Не вдалося завантажити список пісень.',
+    sectionLocationsFailed: 'Не вдалося завантажити локації.',
+    sectionScheduleFailed: 'Не вдалося завантажити перетин розкладів.',
+    sectionSuggestFailed: 'Не вдалося запропонувати час за розкладами.',
     shareTelegram: 'Поділитися в Telegram',
     copyLink: 'Скопіювати посилання',
     linkCopied: 'Посилання скопійовано',
@@ -327,6 +331,7 @@ const uk = {
   common: {
     loading: 'Завантаження…',
     error: 'Щось пішло не так',
+    errorHint: 'Перезавантажте застосунок або поверніться назад.',
     retry: 'Ще раз',
     language: 'Мова',
     me: 'я',
@@ -505,6 +510,10 @@ const en = {
     completeJam: 'Mark as completed',
     cancelNotifySkipped:
       'Jam cancelled, but some Telegram messages were not sent.',
+    sectionSongsFailed: 'Could not load the song list.',
+    sectionLocationsFailed: 'Could not load locations.',
+    sectionScheduleFailed: 'Could not load schedule overlap.',
+    sectionSuggestFailed: 'Could not suggest a time from schedules.',
     shareTelegram: 'Share in Telegram',
     copyLink: 'Copy link',
     linkCopied: 'Link copied',
@@ -660,6 +669,7 @@ const en = {
   common: {
     loading: 'Loading…',
     error: 'Something went wrong',
+    errorHint: 'Reload the app or go back and try again.',
     retry: 'Retry',
     language: 'Language',
     me: 'me',

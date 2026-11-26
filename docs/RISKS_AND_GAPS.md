@@ -79,9 +79,9 @@
 
 | Риск | Где |
 | --- | --- |
-| Нет `ErrorBoundary` | Непойманный throw роняет всё Mini App |
+| ~~Нет ErrorBoundary~~ | `ErrorBoundary` | Обёртка AppShell + reload. |
 | `Promise.all` на Home | Падение `fetchProfile` / `listMyJams` валит весь reload (browse уже soft-fail) |
-| Тихие `catch` на JamDetail | songs / locations / schedule / suggest → пустые блоки без объяснения |
+| ~~Тихие catch JamDetail~~ | sections | Members видят amber warn при fail load. |
 | Deep link + HashRouter | `start_param` / `sessionStorage` починены частично; при уже открытом Mini App Telegram может не обновить `start_param` |
 | CI lint `oxlint \|\| true` | Lint не блокирует merge |
 | CI build без `VITE_*` | Собирает SetupScreen, не прод-конфиг |
@@ -145,8 +145,8 @@
 
 | # | Действие |
 | --- | --- |
-| 10 | Отмена джема, completed для undated, доработка reliability. | done `20261126180000` |
-| 11 | ErrorBoundary, явные ошибки секций. |
+| 10 | Отмена джема, completed для undated, доработка reliability. | done `20261126180000` | done `20261126180000` |
+| 11 | ErrorBoundary, явные ошибки секций. | done client |
 | 12 | CI без `\|\| true`, тесты RPC, автодеплой Edge. |
 | 13 | Revoke лишних `GRANT … TO anon`; defense in depth. |
 | 14 | Рефактор `suggest_window_for_users` (precompute сетки / лимит горизонта). |

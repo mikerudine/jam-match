@@ -86,6 +86,12 @@ export function JamDetailPage() {
     useState<JamScheduleOverlap | null>(null)
   const [suggestedWhen, setSuggestedWhen] =
     useState<SuggestedJamWindow | null>(null)
+  const [sectionErrors, setSectionErrors] = useState<{
+    songs?: string
+    locations?: string
+    schedule?: string
+    suggest?: string
+  }>({})
   const [feedbackDone, setFeedbackDone] = useState(false)
   const [rating, setRating] = useState(4)
   const [showedUp, setShowedUp] = useState(true)
@@ -152,24 +158,42 @@ export function JamDetailPage() {
           d = await getJamDetail(jamId)
         }
         const done = await hasSubmittedFeedback(jamId, session.user.id)
+        const isMemberLoad =
+          d.jam.creator_id === session.user.id ||
+          d.seats.some((s) => s.filled_by === session.user.id)
         let songs: JamSongList | null = null
         let locations: JamLocationList | null = null
         let schedule: JamScheduleOverlap | null = null
+        const nextSectionErrors: {
+          songs?: string
+          locations?: string
+          schedule?: string
+          suggest?: string
+        } = {}
         try {
           songs = await listJamSongs(jamId, session.user.id)
         } catch {
           // Non-participants get nothing from RLS; leave song list hidden.
           songs = null
+          if (isMemberLoad) {
+            nextSectionErrors.songs = t.jam.sectionSongsFailed
+          }
         }
         try {
           locations = await listJamLocations(jamId, session.user.id)
         } catch {
           locations = null
+          if (isMemberLoad) {
+            nextSectionErrors.locations = t.jam.sectionLocationsFailed
+          }
         }
         try {
           schedule = await fetchJamScheduleOverlap(jamId)
         } catch {
           schedule = null
+          if (isMemberLoad) {
+            nextSectionErrors.schedule = t.jam.sectionScheduleFailed
+          }
         }
         let suggested: SuggestedJamWindow | null = null
         if (!d.jam.window_start) {
@@ -177,6 +201,9 @@ export function JamDetailPage() {
             suggested = await fetchSuggestedJamWindow(jamId)
           } catch {
             suggested = null
+            if (isMemberLoad) {
+              nextSectionErrors.suggest = t.jam.sectionSuggestFailed
+            }
           }
         }
         const join =
@@ -191,6 +218,7 @@ export function JamDetailPage() {
           setLocationList(locations)
           setScheduleOverlap(schedule)
           setSuggestedWhen(suggested)
+          setSectionErrors(nextSectionErrors)
           setMyJoin(join)
           setNoAccess(false)
         }
@@ -558,6 +586,13 @@ export function JamDetailPage() {
         />
       ) : null}
 
+      {sectionErrors.schedule ? (
+        <p className="text-sm text-amber">{sectionErrors.schedule}</p>
+      ) : null}
+      {sectionErrors.suggest ? (
+        <p className="text-sm text-amber">{sectionErrors.suggest}</p>
+      ) : null}
+
       {scheduleOverlap ? (
         <JamScheduleOverlapSection
           data={scheduleOverlap}
@@ -614,6 +649,9 @@ export function JamDetailPage() {
         </ul>
       </section>
 
+      {sectionErrors.locations ? (
+        <p className="text-sm text-amber">{sectionErrors.locations}</p>
+      ) : null}
       {locationList && session ? (
         <LocationSection
           userId={session.user.id}
@@ -651,6 +689,9 @@ export function JamDetailPage() {
         />
       ) : null}
 
+      {sectionErrors.songs ? (
+        <p className="text-sm text-amber">{sectionErrors.songs}</p>
+      ) : null}
       {songList && session ? (
         <SongListSection
           userId={session.user.id}

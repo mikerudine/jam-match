@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom'
 import { acceptFriendInvite } from '@/api/friends'
 import { AuthProvider, useAuth } from '@/auth/AuthContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Layout } from '@/components/Layout'
 import { Loading } from '@/components/Loading'
 import { SetupScreen } from '@/components/SetupScreen'
@@ -140,14 +141,27 @@ function AppRoutes() {
   return <ProtectedRoutes />
 }
 
-export default function App() {
+function AppShell() {
+  const { t } = useLocale()
   return (
-    <LocaleProvider>
+    <ErrorBoundary
+      fallbackTitle={t.common.error}
+      fallbackHint={t.common.errorHint}
+      reloadLabel={t.common.retry}
+    >
       <AuthProvider>
         <HashRouter>
           <AppRoutes />
         </HashRouter>
       </AuthProvider>
+    </ErrorBoundary>
+  )
+}
+
+export default function App() {
+  return (
+    <LocaleProvider>
+      <AppShell />
     </LocaleProvider>
   )
 }
