@@ -147,9 +147,9 @@
 | --- | --- |
 | 10 | Отмена джема, completed для undated, доработка reliability. | done `20261126180000` | done `20261126180000` |
 | 11 | ErrorBoundary, явные ошибки секций. | done client |
-| 12 | CI без `\|\| true`, тесты RPC, автодеплой Edge. |
-| 13 | Revoke лишних `GRANT … TO anon`; defense in depth. |
-| 14 | Рефактор `suggest_window_for_users` (precompute сетки / лимит горизонта). |
+| 12 | CI без `\|\| true`, тесты RPC, автодеплой Edge. | done CI lint/tsc fail; Edge deploy still manual |
+| 13 | Revoke лишних `GRANT … TO anon`; defense in depth. | done `20261126190000` |
+| 14 | Рефактор `suggest_window_for_users` (precompute сетки / лимит горизонта). | open (perf) |
 
 ---
 
@@ -167,8 +167,9 @@
 [x] jam-notify — UI warn on skipped (P1)
 [x] ensure_profile — banner + retry after auth (P1)
 [x] cancelled / completed undated — cancel_jam + complete_jam + feedback (20261126180000)
-[ ] CI lint реально failит? (P2)
-[ ] После DROP FUNCTION — есть NOTIFY pgrst? (P2)
+[x] CI lint/tsc реально failят (oxlint + tsc --noEmit)
+[ ] После DROP FUNCTION — есть NOTIFY pgrst? (checklist; new migrations include it)
+[ ] suggest_window_for_users perf refactor (P2 leftover)
 ```
 
 ---
