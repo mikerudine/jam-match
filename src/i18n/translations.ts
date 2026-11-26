@@ -167,6 +167,11 @@ const uk = {
     no: 'Ні',
     submitFeedback: 'Надіслати',
     feedbackDone: 'Дякуємо за відгук',
+    cancelJam: 'Скасувати джем',
+    cancelConfirm: 'Скасувати цей джем? Учасників буде повідомлено в Telegram.',
+    completeJam: 'Позначити завершеним',
+    cancelNotifySkipped:
+      'Джем скасовано, але частина Telegram-повідомлень не пішла.',
     shareTelegram: 'Поділитися в Telegram',
     copyLink: 'Скопіювати посилання',
     linkCopied: 'Посилання скопійовано',
@@ -495,6 +500,11 @@ const en = {
     no: 'No',
     submitFeedback: 'Submit',
     feedbackDone: 'Thanks for the feedback',
+    cancelJam: 'Cancel jam',
+    cancelConfirm: 'Cancel this jam? Members will get a Telegram notice.',
+    completeJam: 'Mark as completed',
+    cancelNotifySkipped:
+      'Jam cancelled, but some Telegram messages were not sent.',
     shareTelegram: 'Share in Telegram',
     copyLink: 'Copy link',
     linkCopied: 'Link copied',

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   applyJamWindowAndMatch,
+  cancelJam,
+  completeJam,
   getJamDetail,
   getMyJoinRequest,
   getPublicJamResult,
@@ -91,6 +93,7 @@ export function JamDetailPage() {
   const [shareBusy, setShareBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [applySuggestedBusy, setApplySuggestedBusy] = useState(false)
+  const [lifecycleBusy, setLifecycleBusy] = useState(false)
   const [songsBusy, setSongsBusy] = useState(false)
   const [locationsBusy, setLocationsBusy] = useState(false)
   const [myJoin, setMyJoin] = useState<JamJoinRequest | null>(null)
@@ -383,12 +386,19 @@ export function JamDetailPage() {
   const { jam, seats, members } = detail
   const isMember = members.some((m) => m.profile.id === session?.user.id)
   const isInitiator = jam.creator_id === session?.user.id
+  const windowEnded =
+    jam.window_end == null ||
+    new Date(jam.window_end).getTime() < Date.now()
   const canFeedback =
     isMember &&
     (jam.status === 'confirmed' || jam.status === 'completed') &&
     !feedbackDone &&
-    Boolean(jam.window_end) &&
-    new Date(jam.window_end!).getTime() < Date.now()
+    windowEnded
+  const canCancel =
+    isInitiator &&
+    (jam.status === 'matching' || jam.status === 'confirmed')
+  const canComplete =
+    isInitiator && jam.status === 'confirmed' && windowEnded
   const canShare = Boolean(telegramBotUsername)
   const canRequestJoin =
     !isInitiator &&
@@ -686,6 +696,63 @@ export function JamDetailPage() {
           </ul>
         </section>
       )}
+
+      {canCancel || canComplete ? (
+        <section className="flex flex-wrap gap-2">
+          {canComplete ? (
+            <button
+              type="button"
+              disabled={lifecycleBusy}
+              className="rounded-xl border border-teal/50 px-4 py-2.5 text-sm font-semibold text-teal disabled:opacity-60"
+              onClick={async () => {
+                if (!jamId) return
+                setLifecycleBusy(true)
+                setError(null)
+                try {
+                  await completeJam(jamId)
+                  await refreshDetail()
+                } catch (err) {
+                  setError(
+                    err instanceof Error ? err.message : t.common.error,
+                  )
+                } finally {
+                  setLifecycleBusy(false)
+                }
+              }}
+            >
+              {t.jam.completeJam}
+            </button>
+          ) : null}
+          {canCancel ? (
+            <button
+              type="button"
+              disabled={lifecycleBusy}
+              className="rounded-xl border border-danger/50 px-4 py-2.5 text-sm font-semibold text-danger disabled:opacity-60"
+              onClick={async () => {
+                if (!jamId) return
+                if (!window.confirm(t.jam.cancelConfirm)) return
+                setLifecycleBusy(true)
+                setError(null)
+                try {
+                  const { notify } = await cancelJam(jamId)
+                  if (!notify.ok) {
+                    setError(t.jam.cancelNotifySkipped)
+                  }
+                  await refreshDetail()
+                } catch (err) {
+                  setError(
+                    err instanceof Error ? err.message : t.common.error,
+                  )
+                } finally {
+                  setLifecycleBusy(false)
+                }
+              }}
+            >
+              {t.jam.cancelJam}
+            </button>
+          ) : null}
+        </section>
+      ) : null}
 
       {canFeedback && (
         <section className="space-y-3 rounded-2xl border border-line bg-panel p-4">

@@ -69,9 +69,9 @@
 | ~~Idea-jam без дат~~ | matching | Закрыто UX: undated не зовёт matching; creator может `apply_jam_window` из suggest (`20261126170000`). |
 | ~~Accept join всегда INSERT~~ | `respond_to_join_request_as` | Закрыто: fill open/invited seat той же роли, иначе INSERT (`20261126160000`). |
 | ~~Unique только pending join~~ | `jam_join_requests` | Закрыто: `jam_join_requests_one_accepted` + `jam_seats_one_filled_user`. |
-| Статус `cancelled` | Есть в enum и i18n, **нет** RPC/UI отмены. |
-| Feedback → `completed` | Только если `window_end < now()`; undated confirmed может «зависнуть». |
-| Reliability | Дельта с feedback уходит на **других** участников, не на автора — легко геймить / выглядит несправедливо. |
+| ~~Статус cancelled~~ | `cancel_jam` | Закрыто: RPC + UI + Telegram members (`20261126180000`). |
+| ~~Feedback → completed~~ | submit/complete | Undated confirmed → completed via feedback или `complete_jam`. |
+| ~~Reliability peers-only~~ | submit_jam_feedback | Дельта применяется ко всем filled seats, включая автора. |
 | ~~Invites без push~~ | `jam-notify` + matching | Закрыто: `{ invite_id }` DM invitee; TTL default 12h (`20261126150000`). |
 | ~~Notify soft-fail~~ | jam-notify | Закрыто: JoinRequestForm / JoinRequestsPanel показывают warn при `skipped`. |
 
@@ -145,7 +145,7 @@
 
 | # | Действие |
 | --- | --- |
-| 10 | Отмена джема, completed для undated, доработка reliability. |
+| 10 | Отмена джема, completed для undated, доработка reliability. | done `20261126180000` |
 | 11 | ErrorBoundary, явные ошибки секций. |
 | 12 | CI без `\|\| true`, тесты RPC, автодеплой Edge. |
 | 13 | Revoke лишних `GRANT … TO anon`; defense in depth. |
@@ -166,7 +166,7 @@
 [x] idea-jam — apply suggested window + match (20261126170000)
 [x] jam-notify — UI warn on skipped (P1)
 [x] ensure_profile — banner + retry after auth (P1)
-[ ] cancelled / completed undated — есть ли путь в UI (P2)
+[x] cancelled / completed undated — cancel_jam + complete_jam + feedback (20261126180000)
 [ ] CI lint реально failит? (P2)
 [ ] После DROP FUNCTION — есть NOTIFY pgrst? (P2)
 ```

@@ -1,9 +1,10 @@
 /**
- * jam-notify — Telegram DMs for join requests and matching invites.
+ * jam-notify — Telegram DMs for join requests, matching invites, cancellations.
  *
  * Body:
- *   { request_id } — join flow (organizer Accept/Decline or decision to requester)
- *   { invite_id }  — matching invite to invitee
+ *   { request_id }    — join flow (organizer Accept/Decline or decision to requester)
+ *   { invite_id }     — matching invite to invitee
+ *   { cancel_jam_id } — cancel notice to filled members (caller = creator)
  *
  * Secrets: TELEGRAM_BOT_TOKEN
  * Optional: TELEGRAM_BOT_USERNAME (default jammatch_bot)
@@ -17,6 +18,7 @@ import {
   DEFAULT_BOT_USERNAME,
   buildJamOpenKeyboard,
   buildJoinRequestKeyboard,
+  formatCancelJamMessage,
   formatDecisionMessage,
   formatJoinRequestMessage,
   formatMatchingInviteMessage,
@@ -61,8 +63,10 @@ interface JamRow {
   format: string
   genres: string[] | null
   area: string
-  window_start: string
-  window_end: string
+  theme?: string | null
+  status?: string
+  window_start: string | null
+  window_end: string | null
 }
 
 interface SeatRow {
@@ -106,7 +110,11 @@ Deno.serve(async (req) => {
     return json(401, { error: 'missing_authorization' })
   }
 
-  let body: { request_id?: string; invite_id?: string }
+  let body: {
+    request_id?: string
+    invite_id?: string
+    cancel_jam_id?: string
+  }
   try {
     body = await req.json()
   } catch {
@@ -117,11 +125,14 @@ Deno.serve(async (req) => {
     typeof body.request_id === 'string' ? body.request_id.trim() : ''
   const inviteId =
     typeof body.invite_id === 'string' ? body.invite_id.trim() : ''
+  const cancelJamId =
+    typeof body.cancel_jam_id === 'string' ? body.cancel_jam_id.trim() : ''
 
-  if (!requestId && !inviteId) {
-    return json(400, { error: 'missing_request_id_or_invite_id' })
+  const idCount = [requestId, inviteId, cancelJamId].filter(Boolean).length
+  if (idCount === 0) {
+    return json(400, { error: 'missing_id' })
   }
-  if (requestId && inviteId) {
+  if (idCount > 1) {
     return json(400, { error: 'ambiguous_ids' })
   }
 
@@ -143,6 +154,15 @@ Deno.serve(async (req) => {
   })
 
   try {
+    if (cancelJamId) {
+      return await notifyJamCancelled({
+        jam,
+        userId: user.id,
+        jamId: cancelJamId,
+        botToken,
+      })
+    }
+
     if (inviteId) {
       return await notifyMatchingInvite({
         jam,
@@ -165,6 +185,94 @@ Deno.serve(async (req) => {
     return json(200, { ok: false, skipped: 'unexpected_error' })
   }
 })
+
+async function notifyJamCancelled(input: {
+  jam: ReturnType<typeof createClient>
+  userId: string
+  jamId: string
+  botToken: string
+}): Promise<Response> {
+  const { jam, userId, jamId, botToken } = input
+
+  const { data: jamRow, error: jamErr } = await jam
+    .from('jam_requests')
+    .select(
+      'id, creator_id, format, genres, area, theme, status, window_start, window_end',
+    )
+    .eq('id', jamId)
+    .maybeSingle()
+
+  if (jamErr || !jamRow) {
+    console.error('cancel jam load failed', jamErr)
+    return json(200, { ok: false, skipped: 'jam_not_found' })
+  }
+
+  const jamData = jamRow as JamRow
+  if (jamData.creator_id !== userId) {
+    return json(403, { error: 'forbidden' })
+  }
+  if (jamData.status !== 'cancelled') {
+    return json(200, { ok: false, skipped: 'jam_not_cancelled' })
+  }
+
+  const { data: seats, error: seatsErr } = await jam
+    .from('jam_seats')
+    .select('id, role, filled_by')
+    .eq('jam_id', jamId)
+
+  if (seatsErr) {
+    console.error('cancel seats load failed', seatsErr)
+    return json(200, { ok: false, skipped: 'seats_failed' })
+  }
+
+  const memberIds = [
+    ...new Set(
+      ((seats ?? []) as SeatRow[])
+        .map((s) => s.filled_by)
+        .filter((id): id is string => Boolean(id) && id !== userId),
+    ),
+  ]
+
+  if (memberIds.length === 0) {
+    return json(200, { ok: true, notified: 'none' })
+  }
+
+  const { data: profiles, error: profileErr } = await jam
+    .from('profiles')
+    .select('id, display_name, telegram_id, telegram_write_access')
+    .in('id', memberIds)
+
+  if (profileErr) {
+    console.error('cancel profiles load failed', profileErr)
+    return json(200, { ok: false, skipped: 'profiles_failed' })
+  }
+
+  const text = formatCancelJamMessage({
+    jamFormat: jamData.format,
+    jamArea: jamData.area,
+    jamGenres: jamData.genres,
+    windowStart: jamData.window_start,
+    windowEnd: jamData.window_end,
+    theme: jamData.theme,
+  })
+
+  let sent = 0
+  let failed = 0
+  for (const p of (profiles ?? []) as ProfileRow[]) {
+    if (!p.telegram_id) continue
+    const result = await sendTelegramMessage(botToken, p.telegram_id, text)
+    if (result.ok) sent += 1
+    else {
+      failed += 1
+      console.error('cancel DM failed', p.id, result.description)
+    }
+  }
+
+  if (sent === 0 && failed > 0) {
+    return json(200, { ok: false, skipped: 'telegram_send_failed' })
+  }
+  return json(200, { ok: true, notified: 'members', sent, failed })
+}
 
 async function notifyMatchingInvite(input: {
   jam: ReturnType<typeof createClient>

@@ -1,4 +1,5 @@
 import {
+  notifyJamCancelled,
   notifyJoinRequest,
   notifyMatchingInvite,
   type NotifyResult,
@@ -313,6 +314,26 @@ export async function submitFeedback(input: {
     p_jam_id: input.jam_id,
     p_rating: input.rating,
     p_everyone_showed_up: input.everyone_showed_up,
+  })
+  if (error) throw error
+}
+
+/** Creator cancels a matching/confirmed jam; soft-notifies filled members. */
+export async function cancelJam(
+  jamId: string,
+): Promise<{ notify: NotifyResult }> {
+  const { error } = await getSupabase().rpc('cancel_jam', {
+    p_jam_id: jamId,
+  })
+  if (error) throw error
+  const notify = await notifyJamCancelled(jamId)
+  return { notify }
+}
+
+/** Creator marks a confirmed jam completed (undated anytime; dated after window_end). */
+export async function completeJam(jamId: string): Promise<void> {
+  const { error } = await getSupabase().rpc('complete_jam', {
+    p_jam_id: jamId,
   })
   if (error) throw error
 }

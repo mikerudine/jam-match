@@ -15,6 +15,7 @@ import {
   formatJamLabelUk,
   formatJamWindowUk,
   formatJoinRequestMessage,
+  formatCancelJamMessage,
   formatMatchingInviteMessage,
   formatResolvedOrganizerMessage,
   parseJoinCallbackData,
@@ -174,6 +175,20 @@ describe('Ukrainian message formatting', () => {
       formatJamLabelUk({ format: 'free_jam', area: 'Podil', genres: [] }),
       'Вільний джем · Podil',
     )
+  })
+
+  it('formats cancel jam message', () => {
+    const text = formatCancelJamMessage({
+      jamFormat: 'free_jam',
+      jamArea: 'Podil',
+      jamGenres: ['rock'],
+      theme: 'Blues night',
+      windowStart: '2026-11-20T17:00:00.000Z',
+      windowEnd: '2026-11-20T19:00:00.000Z',
+    })
+    assert.match(text, /скасовано/i)
+    assert.match(text, /Blues night/)
+    assert.match(text, /Вільний джем · Podil · rock/)
   })
 
   it('formats matching invite for the invitee', () => {

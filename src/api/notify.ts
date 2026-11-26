@@ -6,7 +6,10 @@ export type NotifyResult =
   | { ok: false; skipped: string }
 
 async function callJamNotify(
-  body: { request_id: string } | { invite_id: string },
+  body:
+    | { request_id: string }
+    | { invite_id: string }
+    | { cancel_jam_id: string },
 ): Promise<NotifyResult> {
   try {
     const supabase = getSupabase()
@@ -68,4 +71,9 @@ export async function notifyMatchingInvite(
   inviteId: string,
 ): Promise<NotifyResult> {
   return callJamNotify({ invite_id: inviteId })
+}
+
+/** Best-effort Telegram notify that a jam was cancelled (members). */
+export async function notifyJamCancelled(jamId: string): Promise<NotifyResult> {
+  return callJamNotify({ cancel_jam_id: jamId })
 }

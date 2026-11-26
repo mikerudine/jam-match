@@ -169,6 +169,31 @@ export interface MatchingInviteNotifyInput {
   botUsername?: string
 }
 
+export interface CancelJamNotifyInput {
+  jamFormat: string
+  jamArea: string
+  jamGenres?: string[] | null
+  windowStart?: string | null
+  windowEnd?: string | null
+  theme?: string | null
+}
+
+/** Ukrainian text notifying members that a jam was cancelled. */
+export function formatCancelJamMessage(input: CancelJamNotifyInput): string {
+  const jam = formatJamLabelUk({
+    format: input.jamFormat,
+    area: input.jamArea,
+    genres: input.jamGenres,
+  })
+  const lines = ['Джем скасовано', '', `Джем: ${jam}`]
+  const theme = input.theme?.trim()
+  if (theme) lines.push(`Тема: ${theme}`)
+  if (input.windowStart && input.windowEnd) {
+    lines.push(`Час: ${formatJamWindowUk(input.windowStart, input.windowEnd)}`)
+  }
+  return lines.join('\n')
+}
+
 /** Ukrainian text for a matching seat invite (invitee). */
 export function formatMatchingInviteMessage(
   input: MatchingInviteNotifyInput,
